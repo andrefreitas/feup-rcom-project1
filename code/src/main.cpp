@@ -14,6 +14,6 @@ int main(int argc,char* argv[]){
 		d.llopen(RECEIVER);
 	else
 		cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
-	d.restoreSerialPort();
+
 	return 0;
 }

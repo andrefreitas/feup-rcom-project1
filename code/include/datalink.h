@@ -19,20 +19,27 @@
 #define BBCR (ADDRESSR^CONTROLR)
 
 class dataLink {  
-		char port[20];          /*Dispositivo /dev/ttySx, x = 0, 1*/  
-		int baudRate;          /*Velocidade de transmissão*/  
-		unsigned int sequenceNumber;   /*Número de sequência da trama: 0, 1*/
-		unsigned int timeout;         /*Valor do temporizador: 1 s*/  
-		unsigned int maxAttempts; /*Número de tentativas em caso de falha*/  
-		char frame[MAX_SIZE];         /*Trama*/
+		char port[20];
+		int baudRate;
+		unsigned int sequenceNumber;
+		unsigned int timeout;
+		unsigned int maxAttempts;
+		char frame[MAX_SIZE];
 		struct termios oldtio,newtio;
 		int unsigned fd;
+		// -->
 		void setupSerialPort();
-		
+		void restoreSerialPort();
+		// -->
 		
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
+		static void handleTimeout(int signo);
 		int llopen(unsigned int who);
-		void restoreSerialPort();
+		static char *currentFrame;
+		static int reaminingAttempts;
+		static int currentFD;
+		static int currentTimeout;
+		~dataLink();
 }; 
 
