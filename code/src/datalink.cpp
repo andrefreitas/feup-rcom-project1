@@ -3,7 +3,8 @@ char* dataLink::currentFrame=0;
 int dataLink::reaminingAttempts=0;
 int dataLink::currentFD=0;
 int dataLink::currentTimeout=0;
- void dataLink::handleTimeout(int signo){
+
+void dataLink::handleTimeout(int signo){
 	if(dataLink::reaminingAttempts>0){
 		printf("Alarme%d\n",dataLink::reaminingAttempts);
 		write(dataLink::currentFD,dataLink::currentFrame,5);
@@ -12,8 +13,8 @@ int dataLink::currentTimeout=0;
 	}
 	else exit(0);
 }
-dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
-		unsigned int maxAttempts) {
+dataLink::dataLink(char *port, int baudRate, unsigned int timeout,	unsigned int maxAttempts) {
+
 	strcpy(this->port, port);
 	this->baudRate = baudRate;
 	this->timeout = timeout;
@@ -97,7 +98,7 @@ int dataLink::llopen(unsigned int who) {
 			}
 
 		}
-		// Todo: imediatamente após receber, tem de desativar o alarme
+		// Todo: imediatamente apï¿½s receber, tem de desativar o alarme
 		printf("Emissor recebeu o UA\n");
 		return fd;
 	} else if (who == RECEIVER) {
