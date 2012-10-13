@@ -8,11 +8,16 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	if (argc == 2) {
-		dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-		if (strcmp(argv[1], "transmitter") == 0)
+		if (strcmp(argv[1], "transmitter") == 0) {
+			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			d.llopen(TRANSMITTER);
-		else if (strcmp(argv[1], "receiver") == 0)
+		}
+		else if (strcmp(argv[1], "receiver") == 0) {
+			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			d.llopen(RECEIVER);
+		}
+		else
+			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
 	}
 	else
 		cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
