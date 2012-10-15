@@ -98,7 +98,8 @@ int dataLink::llopen(unsigned int who) {
 			}
 
 		}
-		// Todo: imediatamente ap�s receber, tem de desativar o alarme
+		// Todo: imediatamente apos receber, tem de desativar o alarme
+		alarm(0);
 		printf("Emissor recebeu o UA\n");
 		return fd;
 	} else if (who == RECEIVER) {
