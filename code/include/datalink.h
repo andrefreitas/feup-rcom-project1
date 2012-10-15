@@ -15,6 +15,7 @@
 #define ADDRESS_RE 0x01
 #define SET 0x03
 #define UA 0x07
+#define DISC 0x0B
 class dataLink {  
 		char port[20];
 		int baudRate;

@@ -11,10 +11,12 @@ int main(int argc, char* argv[]) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			d.llopen(TRANSMITTER);
+			d.llclose(TRANSMITTER);
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			d.llopen(RECEIVER);
+			d.llclose(RECEIVER);
 		}
 		else
 			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;

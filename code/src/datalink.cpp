@@ -10,8 +10,10 @@ void dataLink::handleTimeout(int signo) {
 		write(dataLink::currentFD, dataLink::currentFrame, 5);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
-	} else
+	} else {
+		printf("Connection FAILED!\n");
 		exit(0);
+	}
 }
 dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
 		unsigned int maxAttempts) {
@@ -89,14 +91,14 @@ int dataLink::llopen(unsigned int who) {
 	set[0] = FLAG;
 	set[1] = ADDRESS_ER;
 	set[2] = SET;
-	set[3] = ADDRESS_ER^SET;
+	set[3] = ADDRESS_ER ^ SET;
 	set[4] = FLAG;
 
 	char ua[5];
 	ua[0] = FLAG;
 	ua[1] = ADDRESS_ER;
 	ua[2] = UA;
-	ua[3] = ADDRESS_ER^UA;
+	ua[3] = ADDRESS_ER ^ UA;
 	ua[4] = FLAG;
 
 	if (who == TRANSMITTER) {
@@ -128,12 +130,67 @@ int dataLink::llopen(unsigned int who) {
 	}
 	return -1;
 }
-int dataLink::llclose(unsigned int who){
+int dataLink::llclose(unsigned int who) {
 
 	char ua[5];
-	char disc[5];
+	ua[0] = FLAG;
+	ua[1] = ADDRESS_RE;
+	ua[2] = UA;
+	ua[3] = ADDRESS_RE ^ UA;
+	ua[4] = FLAG;
+
+	char discT[5]; // disconect from Transmitter
+	discT[0] = FLAG;
+	discT[1] = ADDRESS_ER;
+	discT[2] = DISC;
+	discT[3] = ADDRESS_ER ^ DISC;
+	discT[4] = FLAG;
+
+	char discR[5]; // disconnect from Receiver
+	discR[0] = FLAG;
+	discR[1] = ADDRESS_RE;
+	discR[2] = DISC;
+	discR[3] = ADDRESS_RE ^ DISC;
+	discR[4] = FLAG;
+
+	dataLink::currentTimeout = timeout;
+	dataLink::currentFD = fd;
+	(void) signal(SIGALRM, dataLink::handleTimeout);
 
 
+
+	if (who == TRANSMITTER) {
+
+
+		write(fd, discT, 5);
+		printf("Escreveu discT\n");
+		dataLink::currentFrame = discT;
+		dataLink::reaminingAttempts = maxAttempts;
+		alarm(timeout);
+		readSupervisionFrame(fd, discR);
+		alarm(0);
+		printf("Leu discR\n");
+		write(fd,ua,5);
+		printf("Escreveu UA\n");
+		return fd;
+	}
+
+	if(who == RECEIVER) {
+		dataLink::currentFrame = discT;
+		dataLink::reaminingAttempts = maxAttempts;
+
+		readSupervisionFrame(fd, discT);
+		printf("Leu discT\n");
+		write(fd,discR,5);
+		printf("Escreveu discR\n");
+		alarm(timeout);
+		readSupervisionFrame(fd,ua);
+		alarm(0);
+		printf("Leu UA\n");
+		return fd;
+	}
+
+	return -1;
 
 }
 dataLink::~dataLink() {
