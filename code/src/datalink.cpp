@@ -1,19 +1,20 @@
 #include "datalink.h"
-char* dataLink::currentFrame=0;
-int dataLink::reaminingAttempts=0;
-int dataLink::currentFD=0;
-int dataLink::currentTimeout=0;
+char* dataLink::currentFrame = 0;
+int dataLink::reaminingAttempts = 0;
+int dataLink::currentFD = 0;
+int dataLink::currentTimeout = 0;
 
-void dataLink::handleTimeout(int signo){
-	if(dataLink::reaminingAttempts>0){
-		printf("Alarme%d\n",dataLink::reaminingAttempts);
-		write(dataLink::currentFD,dataLink::currentFrame,5);
+void dataLink::handleTimeout(int signo) {
+	if (dataLink::reaminingAttempts > 0) {
+		printf("Alarme%d\n", dataLink::reaminingAttempts);
+		write(dataLink::currentFD, dataLink::currentFrame, 5);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
-	}
-	else exit(0);
+	} else
+		exit(0);
 }
-dataLink::dataLink(char *port, int baudRate, unsigned int timeout,	unsigned int maxAttempts) {
+dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
+		unsigned int maxAttempts) {
 
 	strcpy(this->port, port);
 	this->baudRate = baudRate;
@@ -43,116 +44,91 @@ void dataLink::restoreSerialPort() {
 	close(fd);
 }
 
+void dataLink::readDataFrame(int fd, char *buf) {
+	int estado = 0;
+	char readC;
+	while (estado < 5) {
+		read(fd, &readC, 1);
+		switch (estado) {
+		case 0: {
+			if (readC == buf[0])
+				estado++;
+			break;
+		}
+		case 1: {
+			if (readC == buf[1])
+				estado++;
+			break;
+		}
+		case 2: {
+			if (readC == buf[2])
+				estado++;
+			else if (readC == buf[0])
+				estado = 1;
+			break;
+		}
+		case 3: {
+			if (readC == buf[3])
+				estado++;
+			else if (readC == buf[0])
+				estado = 1;
+			break;
+		}
+		case 4: {
+			if (readC == buf[4])
+				estado++;
+			break;
+		}
+		}
+
+	}
+}
+
 int dataLink::llopen(unsigned int who) {
+	char set[5];
+	set[0] = FLAG;
+	set[1] = ADDRESSE;
+	set[2] = CONTROLE;
+	set[3] = BBCE;
+	set[4] = FLAG;
+
+	char ua[5];
+	ua[0] = FLAG;
+	ua[1] = ADDRESSE;
+	ua[2] = CONTROLE;
+	ua[3] = BBCE;
+	ua[4] = FLAG;
 
 	if (who == TRANSMITTER) {
-		int estado = 0;
-		char readC;
-		frame[0] = FLAG;
-		frame[1] = ADDRESSE;
-		frame[2] = CONTROLE;
-		frame[3] = BBCE;
-		frame[4] = FLAG;
-		// -->
-		dataLink::currentFrame=frame;
-		dataLink::reaminingAttempts=maxAttempts;
-		dataLink::currentTimeout=timeout;
-		dataLink::currentFD=fd;
-		(void) signal(SIGALRM,dataLink::handleTimeout);
-		// -->
-		write(fd, frame, 5);
+
+
+
+		dataLink::currentFrame = set;
+		dataLink::reaminingAttempts = maxAttempts;
+		dataLink::currentTimeout = timeout;
+		dataLink::currentFD = fd;
+
+		(void) signal(SIGALRM, dataLink::handleTimeout);
+
+		write(fd, set, 5);
 		printf("Emissor escreveu\n");
 		alarm(timeout);
-		while (estado < 5) {
-			read(fd, &readC, 1);
-			switch (estado) {
-			case 0: {
-				if (readC == FLAG)
-					estado++;
-				break;
-			}
-			case 1: {
-				if (readC == ADDRESSR)
-					estado++;
-				break;
-			}
-			case 2: {
-				if (readC == CONTROLR)
-					estado++;
-				else if (readC == FLAG)
-					estado = 1;
-				break;
-			}
-			case 3: {
-				if (readC == BBCR)
-					estado++;
-				else if (readC == FLAG)
-					estado = 1;
-				break;
-			}
-			case 4: {
-				if (readC == FLAG)
-					estado++;
-				break;
-			}
-			}
-
-		}
-		// Todo: imediatamente apos receber, tem de desativar o alarme
+		readDataFrame(fd, ua);
 		alarm(0);
 		printf("Emissor recebeu o UA\n");
-		return fd;
-	} else if (who == RECEIVER) {
-		int estado = 0;
-		char readC;
-		while (estado < 5) {
-			read(fd, &readC, 1);
-			switch (estado) {
-			case 0: {
-				if (readC == FLAG)
-					estado++;
-				break;
-			}
-			case 1: {
-				if (readC == ADDRESSE)
-					estado++;
-				break;
-			}
-			case 2: {
-				if (readC == CONTROLE)
-					estado++;
-				else if (readC == FLAG)
-					estado = 1;
-				break;
-			}
-			case 3: {
-				if (readC == BBCE)
-					estado++;
-				else if (readC == FLAG)
-					estado = 1;
-				break;
-			}
-			case 4: {
-				if (readC == FLAG)
-					estado++;
-				break;
-			}
-			}
 
-		}
+		return fd;
+
+	} else if (who == RECEIVER) {
+		readDataFrame(fd,set);
 		printf("Receptor recebeu SET\n");
-		frame[0] = FLAG;
-		frame[1] = ADDRESSR;
-		frame[2] = CONTROLR;
-		frame[3] = BBCR;
-		frame[4] = FLAG;
-		write(fd, frame, 5);
+		write(fd, ua, 5);
 		printf("Emissor recebeu o UA\n");
 		return fd;
 	}
 	return -1;
 }
 
-dataLink::~dataLink(){
+dataLink::~dataLink() {
 	restoreSerialPort();
 }

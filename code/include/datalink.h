@@ -17,7 +17,6 @@
 #define CONTROLR 0x07
 #define BBCE (ADDRESSE^CONTROLE)
 #define BBCR (ADDRESSR^CONTROLR)
-
 class dataLink {  
 		char port[20];
 		int baudRate;
@@ -30,6 +29,7 @@ class dataLink {
 		// -->
 		void setupSerialPort();
 		void restoreSerialPort();
+		void readDataFrame(int fd,char *buf);
 		// -->
 		
 	public:
