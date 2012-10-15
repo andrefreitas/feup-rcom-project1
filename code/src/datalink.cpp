@@ -44,7 +44,7 @@ void dataLink::restoreSerialPort() {
 	close(fd);
 }
 
-void dataLink::readDataFrame(int fd, char *buf) {
+void dataLink::readSupervisionFrame(int fd, char *buf) {
 	int estado = 0;
 	char readC;
 	while (estado < 5) {
@@ -87,21 +87,19 @@ void dataLink::readDataFrame(int fd, char *buf) {
 int dataLink::llopen(unsigned int who) {
 	char set[5];
 	set[0] = FLAG;
-	set[1] = ADDRESSE;
-	set[2] = CONTROLE;
-	set[3] = BBCE;
+	set[1] = ADDRESS_ER;
+	set[2] = SET;
+	set[3] = ADDRESS_ER^SET;
 	set[4] = FLAG;
 
 	char ua[5];
 	ua[0] = FLAG;
-	ua[1] = ADDRESSE;
-	ua[2] = CONTROLE;
-	ua[3] = BBCE;
+	ua[1] = ADDRESS_ER;
+	ua[2] = UA;
+	ua[3] = ADDRESS_ER^UA;
 	ua[4] = FLAG;
 
 	if (who == TRANSMITTER) {
-
-
 
 		dataLink::currentFrame = set;
 		dataLink::reaminingAttempts = maxAttempts;
@@ -113,14 +111,16 @@ int dataLink::llopen(unsigned int who) {
 		write(fd, set, 5);
 		printf("Emissor escreveu\n");
 		alarm(timeout);
-		readDataFrame(fd, ua);
+		readSupervisionFrame(fd, ua);
 		alarm(0);
 		printf("Emissor recebeu o UA\n");
 
 		return fd;
 
 	} else if (who == RECEIVER) {
-		readDataFrame(fd,set);
+
+		readSupervisionFrame(fd, set);
+
 		printf("Receptor recebeu SET\n");
 		write(fd, ua, 5);
 		printf("Emissor recebeu o UA\n");
@@ -128,7 +128,14 @@ int dataLink::llopen(unsigned int who) {
 	}
 	return -1;
 }
+int dataLink::llclose(unsigned int who){
 
+	char ua[5];
+	char disc[5];
+
+
+
+}
 dataLink::~dataLink() {
 	restoreSerialPort();
 }

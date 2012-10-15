@@ -11,12 +11,10 @@
 #define TRANSMITTER 100
 #define RECEIVER 200
 #define FLAG 0x7E
-#define ADDRESSE 0x03
-#define ADDRESSR 0x01
-#define CONTROLE 0x03
-#define CONTROLR 0x07
-#define BBCE (ADDRESSE^CONTROLE)
-#define BBCR (ADDRESSR^CONTROLR)
+#define ADDRESS_ER 0x03
+#define ADDRESS_RE 0x01
+#define SET 0x03
+#define UA 0x07
 class dataLink {  
 		char port[20];
 		int baudRate;
@@ -29,13 +27,14 @@ class dataLink {
 		// -->
 		void setupSerialPort();
 		void restoreSerialPort();
-		void readDataFrame(int fd,char *buf);
+		void readSupervisionFrame(int fd,char *buf);
 		// -->
 		
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
 		static void handleTimeout(int signo);
 		int llopen(unsigned int who);
+		int llclose(unsigned int who);
 		static char *currentFrame;
 		static int reaminingAttempts;
 		static int currentFD;
