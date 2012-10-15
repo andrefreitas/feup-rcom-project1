@@ -157,10 +157,7 @@ int dataLink::llclose(unsigned int who) {
 	dataLink::currentFD = fd;
 	(void) signal(SIGALRM, dataLink::handleTimeout);
 
-
-
 	if (who == TRANSMITTER) {
-
 
 		write(fd, discT, 5);
 		printf("Escreveu discT\n");
@@ -170,21 +167,21 @@ int dataLink::llclose(unsigned int who) {
 		readSupervisionFrame(fd, discR);
 		alarm(0);
 		printf("Leu discR\n");
-		write(fd,ua,5);
+		write(fd, ua, 5);
 		printf("Escreveu UA\n");
 		return fd;
 	}
 
-	if(who == RECEIVER) {
+	if (who == RECEIVER) {
 		dataLink::currentFrame = discT;
 		dataLink::reaminingAttempts = maxAttempts;
 
 		readSupervisionFrame(fd, discT);
 		printf("Leu discT\n");
-		write(fd,discR,5);
+		write(fd, discR, 5);
 		printf("Escreveu discR\n");
 		alarm(timeout);
-		readSupervisionFrame(fd,ua);
+		readSupervisionFrame(fd, ua);
 		alarm(0);
 		printf("Leu UA\n");
 		return fd;
