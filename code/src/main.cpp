@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			d.llopen(TRANSMITTER);
 			d.llclose(TRANSMITTER);
+			//d.llwrite("TTTT",4);
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
