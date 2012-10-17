@@ -79,11 +79,73 @@ void dataLink::readSupervisionFrame(int fd, char *buf) {
 		case 4: {
 			if (readC == buf[4])
 				estado++;
+			else
+				estado = 0;
 			break;
 		}
 		}
 
 	}
+}
+
+bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
+	int estado = 0;
+	char readC;
+	while (1) {
+		read(fd, &readC, 1);
+		switch (estado) {
+		case 0: {
+			if (readC == rr[0]) // FLAG
+				estado++;
+			break;
+		}
+		case 1: {
+			if (readC == rr[1]) // ADDRESS
+				estado++;
+			break;
+		}
+		case 2: {
+			if (readC == rr[2]) // RR
+				estado++;
+			if (readC == rej[2]) // REJ
+				estado = 4;
+			else if (readC == rr[0])
+				estado = 1;
+			break;
+		}
+		case 3: {
+			if (readC == rr[3])
+				estado = 5;
+			else if (readC == rr[0])
+				estado = 1;
+			break;
+		}
+		case 4: {
+			if (readC == rej[3])
+				estado = 6;
+			else if (readC == rej[0])
+				estado = 1;
+			break;
+		}
+		case 5: {
+			if (readC == rr[4])
+				return true;
+			else
+				estado = 0;
+			break;
+		}
+		case 6: {
+			if (readC == rej[4])
+				return false;
+			else
+				estado = 0;
+			break;
+		}
+
+		}
+
+	}
+	return false;
 }
 
 int dataLink::llopen(unsigned int who) {

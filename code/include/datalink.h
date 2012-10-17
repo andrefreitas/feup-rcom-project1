@@ -29,6 +29,7 @@ class dataLink {
 		void setupSerialPort();
 		void restoreSerialPort();
 		void readSupervisionFrame(int fd,char *buf);
+		bool isReceiverReady(int fd, char *rr, char *rej);
 		// -->
 		
 	public:
