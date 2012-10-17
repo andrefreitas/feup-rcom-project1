@@ -1,13 +1,14 @@
 #include "datalink.h"
 char* dataLink::currentFrame = 0;
 int dataLink::reaminingAttempts = 0;
+int dataLink::currentFrameLength=0;
 int dataLink::currentFD = 0;
 int dataLink::currentTimeout = 0;
 
 void dataLink::handleTimeout(int signo) {
 	if (dataLink::reaminingAttempts > 0) {
 		printf("Alarme%d\n", dataLink::reaminingAttempts);
-		write(dataLink::currentFD, dataLink::currentFrame, 5);
+		write(dataLink::currentFD, dataLink::currentFrame, dataLink::currentFrameLength);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
 	} else {
@@ -112,7 +113,7 @@ int dataLink::llopen(unsigned int who) {
 		dataLink::reaminingAttempts = maxAttempts;
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
-
+		dataLink::currentFrameLength=5;
 		(void) signal(SIGALRM, dataLink::handleTimeout);
 
 		write(fd, set, 5);
@@ -160,6 +161,7 @@ int dataLink::llclose(unsigned int who) {
 
 	dataLink::currentTimeout = timeout;
 	dataLink::currentFD = fd;
+	dataLink::currentFrameLength=5;
 	(void) signal(SIGALRM, dataLink::handleTimeout);
 
 	if (who == TRANSMITTER) {
@@ -233,4 +235,14 @@ int dataLink::llwrite(char *buf,int length){
 	rej[3]=rej[1] ^ rej[2];
 	rej[4]=FLAG;
 
+/* do {
+		dataLink::currentTimeout = timeout;
+		dataLink::currentFD = fd;
+		dataLink::currentFrame = frame;
+		dataLink::reaminingAttempts = maxAttempts;
+		dataLink::currentFrameLength=5;
+	}while(!isReceiverReady(fd,rr,rej));
+	alarm(0);
+	// Todo: finish this
+*/
 }

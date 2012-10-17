@@ -47,6 +47,7 @@ class dataLink {
 		static int reaminingAttempts;
 		static int currentFD;
 		static int currentTimeout;
+		static int currentFrameLength;
 		~dataLink();
 }; 
 
