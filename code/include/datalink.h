@@ -7,6 +7,8 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <iostream>
+using namespace std;
 #define MAX_SIZE 255
 #define TRANSMITTER 100
 #define RECEIVER 200
@@ -16,6 +18,10 @@
 #define SET 0x03
 #define UA 0x07
 #define DISC 0x0B
+#define RR0 0x05
+#define RR1 0x25
+#define REJ0 0x01
+#define REJ1 0x21
 class dataLink {  
 		char port[20];
 		int baudRate;
@@ -36,6 +42,7 @@ class dataLink {
 		static void handleTimeout(int signo);
 		int llopen(unsigned int who);
 		int llclose(unsigned int who);
+		int llwrite(char *buf,int length);
 		static char *currentFrame;
 		static int reaminingAttempts;
 		static int currentFD;

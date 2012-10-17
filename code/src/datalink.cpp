@@ -22,7 +22,12 @@ dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
 	this->baudRate = baudRate;
 	this->timeout = timeout;
 	this->maxAttempts = maxAttempts;
+	sequenceNumber=1;
 	setupSerialPort();
+}
+
+dataLink::~dataLink() {
+	restoreSerialPort();
 }
 
 void dataLink::setupSerialPort() {
@@ -190,6 +195,42 @@ int dataLink::llclose(unsigned int who) {
 	return -1;
 
 }
-dataLink::~dataLink() {
-	restoreSerialPort();
+
+int dataLink::llwrite(char *buf,int length){
+	// Data Frame
+	char frame[6+length];
+	frame[0]=FLAG;
+	frame[1]=ADDRESS_ER;
+	frame[2]=0x02*sequenceNumber;
+	frame[3]=frame[1]^frame[2];
+	char bcc2=0;
+	for(int unsigned i=0; i<length; i++){
+		frame[3+i]=buf[i];
+		bcc2=bcc2 ^ buf[i];
+	}
+	frame[3+length]=bcc2;
+	frame[3+length+1]=FLAG;
+
+	// Receiver Ready
+	char rr[5];
+	rr[0]=FLAG;
+	rr[1]=ADDRESS_ER;
+	if(sequenceNumber==0)
+		rr[2]=RR1;
+	else
+		rr[2]=RR0;
+	rr[3]=rr[1] ^ rr[2];
+	rr[4]=FLAG;
+
+	// or maybe a Reject
+	char rej[5];
+	rej[0]=FLAG;
+	rej[1]=ADDRESS_ER;
+	if(sequenceNumber==0)
+		rej[2]=REJ0;
+	else
+		rej[2]=REJ1;
+	rej[3]=rej[1] ^ rej[2];
+	rej[4]=FLAG;
+
 }
