@@ -392,6 +392,14 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 int dataLink::llread(char *buf) {
 	int frameLen=readInformationFrame(fd,buf);
 	int dataLen=frameLen-6;
-
+	// Todo:
+	/* Rejeitar a mensagem se:
+	 * 	1) Não tem o comprimento mínimo da frame <7
+	 * 	2) BCC2 está errado.
+	 * Senão
+	 *  ReceiverReady (próxima sequência)
+	 *
+	 *  Implementar o parseSequenceNumber e o
+	 */
 	return 1;
 }
