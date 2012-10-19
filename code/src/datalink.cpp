@@ -1,14 +1,16 @@
 #include "datalink.h"
 char* dataLink::currentFrame = 0;
 int dataLink::reaminingAttempts = 0;
-int dataLink::currentFrameLength=0;
+int dataLink::currentFrameLength = 0;
 int dataLink::currentFD = 0;
 int dataLink::currentTimeout = 0;
 
 void dataLink::handleTimeout(int signo) {
 	if (dataLink::reaminingAttempts > 0) {
-		printf("Alarme. Tentativas restantes: %d\n", dataLink::reaminingAttempts);
-		write(dataLink::currentFD, dataLink::currentFrame, dataLink::currentFrameLength);
+		printf("Alarme. Tentativas restantes: %d\n",
+				dataLink::reaminingAttempts);
+		write(dataLink::currentFD, dataLink::currentFrame,
+				dataLink::currentFrameLength);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
 	} else {
@@ -23,7 +25,7 @@ dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
 	this->baudRate = baudRate;
 	this->timeout = timeout;
 	this->maxAttempts = maxAttempts;
-	sequenceNumber=0;
+	sequenceNumber = 0;
 	setupSerialPort();
 }
 
@@ -177,7 +179,7 @@ int dataLink::llopen(unsigned int who) {
 		dataLink::reaminingAttempts = maxAttempts;
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
-		dataLink::currentFrameLength=5;
+		dataLink::currentFrameLength = 5;
 
 		write(fd, set, 5);
 		printf("Emissor escreveu\n");
@@ -224,7 +226,7 @@ int dataLink::llclose(unsigned int who) {
 
 	dataLink::currentTimeout = timeout;
 	dataLink::currentFD = fd;
-	dataLink::currentFrameLength=5;
+	dataLink::currentFrameLength = 5;
 
 	if (who == TRANSMITTER) {
 
@@ -260,42 +262,42 @@ int dataLink::llclose(unsigned int who) {
 
 }
 
-int dataLink::llwrite(char *buf,int unsigned length){
+int dataLink::llwrite(char *buf, int unsigned length) {
 	// Data Frame
-	char frame[6+length];
-	frame[0]=FLAG;
-	frame[1]=ADDRESS_ER;
-	frame[2]=0x02*sequenceNumber;
-	frame[3]=frame[1]^frame[2];
-	char bcc2=0;
-	for(int unsigned i=0; i<length; i++){
-		frame[3+i]=buf[i];
-		bcc2=bcc2 ^ buf[i];
+	char frame[6 + length];
+	frame[0] = FLAG;
+	frame[1] = ADDRESS_ER;
+	frame[2] = 0x02 * sequenceNumber;
+	frame[3] = frame[1] ^ frame[2];
+	char bcc2 = 0;
+	for (int unsigned i = 0; i < length; i++) {
+		frame[4 + i] = buf[i];
+		bcc2 = bcc2 ^ buf[i];
 	}
-	frame[3+length]=bcc2;
-	frame[3+length+1]=FLAG;
+	frame[4 + length] = bcc2;
+	frame[4 + length + 1] =FLAG;
 
 	// Receiver Ready
 	char rr[5];
-	rr[0]=FLAG;
-	rr[1]=ADDRESS_ER;
-	if(sequenceNumber==0)
-		rr[2]=RR1;
+	rr[0] = FLAG;
+	rr[1] = ADDRESS_ER;
+	if (sequenceNumber == 0)
+		rr[2] = RR1;
 	else
-		rr[2]=RR0;
-	rr[3]=rr[1] ^ rr[2];
-	rr[4]=FLAG;
+		rr[2] = RR0;
+	rr[3] = rr[1] ^ rr[2];
+	rr[4] = FLAG;
 
 	// or maybe a Reject
 	char rej[5];
-	rej[0]=FLAG;
-	rej[1]=ADDRESS_ER;
-	if(sequenceNumber==0)
-		rej[2]=REJ0;
+	rej[0] = FLAG;
+	rej[1] = ADDRESS_ER;
+	if (sequenceNumber == 0)
+		rej[2] = REJ0;
 	else
-		rej[2]=REJ1;
-	rej[3]=rej[1] ^ rej[2];
-	rej[4]=FLAG;
+		rej[2] = REJ1;
+	rej[3] = rej[1] ^ rej[2];
+	rej[4] = FLAG;
 
 	//cout << "Escrevi, ns= " << sequenceNumber << endl;
 
@@ -304,13 +306,92 @@ int dataLink::llwrite(char *buf,int unsigned length){
 		dataLink::currentFD = fd;
 		dataLink::currentFrame = frame;
 		dataLink::reaminingAttempts = maxAttempts;
-		dataLink::currentFrameLength=6+length;
+		dataLink::currentFrameLength = 6 + length;
 
-		write(fd,frame,dataLink::currentFrameLength);
+		write(fd, frame, dataLink::currentFrameLength);
+		cout << "Escrevi!!\n" ;
 		alarm(timeout);
-	}while(!isReceiverReady(fd,rr,rej));
+	} while (!isReceiverReady(fd, rr, rej));
 	alarm(0);
 
-	sequenceNumber=!sequenceNumber;
+	sequenceNumber = !sequenceNumber;
 	return length;
+}
+
+int dataLink::readInformationFrame(int fd, char *buf) {
+	int estado = 0;
+	char readC;
+	char C;
+	int counter = -1;
+
+	while (1) {
+		read(fd, &readC, 1);
+		// Debug
+		printf("%x:st%d ",readC,estado);
+		counter++;
+		switch (estado) {
+		case 0:
+			if (readC == FLAG) {
+				estado++;
+				counter = 0; // reset counter
+				buf[counter] = readC;
+			}
+			break;
+		case 1:
+			if (readC == ADDRESS_ER) {
+				estado++;
+				buf[counter] = readC;
+			} else if (readC == FLAG)
+				estado = 0;
+			break;
+		case 2:
+			if (readC == 0x02 || readC == 0x00) {
+				C = readC;
+				estado++;
+				buf[counter] = readC;
+			} else if (readC == FLAG)
+				estado = 0;
+			break;
+
+		case 3:
+			if (readC == (ADDRESS_ER ^ C)) {
+				estado++;
+				buf[counter] = readC;
+			} else if (readC == FLAG)
+				estado = 0;
+			break;
+		case 4:
+			if (readC == FLAG)
+				estado = 0;
+			else {
+				estado++;
+				buf[counter] = readC;
+			}
+			break;
+		case 5:
+			if (readC == FLAG)
+				estado = 0;
+			else {
+				estado++;
+				buf[counter] = readC;
+			}
+			break;
+		case 6:
+			if (readC == FLAG) {
+				buf[counter] = readC;
+				return counter+1;
+			}
+			break;
+
+		}
+
+	}
+
+}
+
+int dataLink::llread(char *buf) {
+	int frameLen=readInformationFrame(fd,buf);
+	int dataLen=frameLen-6;
+
+	return 1;
 }

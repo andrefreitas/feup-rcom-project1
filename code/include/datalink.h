@@ -39,19 +39,21 @@ class dataLink {
 		void restoreSerialPort();
 		void readSupervisionFrame(int fd,char *buf);
 		bool isReceiverReady(int fd, char *rr, char *rej);
+		int readInformationFrame(int fd, char *buf);
 		// -->
 		
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
 		static void handleTimeout(int signo);
-		int llopen(unsigned int who);
-		int llclose(unsigned int who);
-		int llwrite(char *buf,int unsigned length);
 		static char *currentFrame;
 		static int reaminingAttempts;
 		static int currentFD;
 		static int currentTimeout;
 		static int currentFrameLength;
+		int llopen(unsigned int who);
+		int llclose(unsigned int who);
+		int llwrite(char *buf,int unsigned length);
+		int llread(char *buf);
 		~dataLink();
 }; 
 
