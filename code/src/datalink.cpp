@@ -7,12 +7,12 @@ int dataLink::currentTimeout = 0;
 
 void dataLink::handleTimeout(int signo) {
 	if (dataLink::reaminingAttempts > 0) {
-		printf("Alarme%d\n", dataLink::reaminingAttempts);
+		printf("Alarme. Tentativas restantes: %d\n", dataLink::reaminingAttempts);
 		write(dataLink::currentFD, dataLink::currentFrame, dataLink::currentFrameLength);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
 	} else {
-		printf("Connection FAILED!\n");
+		printf("Timeout !\n");
 		exit(0);
 	}
 }
@@ -23,7 +23,7 @@ dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
 	this->baudRate = baudRate;
 	this->timeout = timeout;
 	this->maxAttempts = maxAttempts;
-	sequenceNumber=1;
+	sequenceNumber=0;
 	setupSerialPort();
 }
 
@@ -44,6 +44,8 @@ void dataLink::setupSerialPort() {
 
 	tcflush(fd, TCIOFLUSH);
 	tcsetattr(fd, TCSANOW, &newtio);
+
+	(void) signal(SIGALRM, dataLink::handleTimeout);
 }
 
 void dataLink::restoreSerialPort() {
@@ -176,7 +178,6 @@ int dataLink::llopen(unsigned int who) {
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
 		dataLink::currentFrameLength=5;
-		(void) signal(SIGALRM, dataLink::handleTimeout);
 
 		write(fd, set, 5);
 		printf("Emissor escreveu\n");
@@ -224,7 +225,6 @@ int dataLink::llclose(unsigned int who) {
 	dataLink::currentTimeout = timeout;
 	dataLink::currentFD = fd;
 	dataLink::currentFrameLength=5;
-	(void) signal(SIGALRM, dataLink::handleTimeout);
 
 	if (who == TRANSMITTER) {
 
@@ -260,7 +260,7 @@ int dataLink::llclose(unsigned int who) {
 
 }
 
-int dataLink::llwrite(char *buf,int length){
+int dataLink::llwrite(char *buf,int unsigned length){
 	// Data Frame
 	char frame[6+length];
 	frame[0]=FLAG;
@@ -297,14 +297,20 @@ int dataLink::llwrite(char *buf,int length){
 	rej[3]=rej[1] ^ rej[2];
 	rej[4]=FLAG;
 
-/* do {
+	//cout << "Escrevi, ns= " << sequenceNumber << endl;
+
+	do {
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
 		dataLink::currentFrame = frame;
 		dataLink::reaminingAttempts = maxAttempts;
-		dataLink::currentFrameLength=5;
+		dataLink::currentFrameLength=6+length;
+
+		write(fd,frame,dataLink::currentFrameLength);
+		alarm(timeout);
 	}while(!isReceiverReady(fd,rr,rej));
 	alarm(0);
-	// Todo: finish this
-*/
+
+	sequenceNumber=!sequenceNumber;
+	return -1;
 }
