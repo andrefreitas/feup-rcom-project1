@@ -312,5 +312,5 @@ int dataLink::llwrite(char *buf,int unsigned length){
 	alarm(0);
 
 	sequenceNumber=!sequenceNumber;
-	return -1;
+	return length;
 }
