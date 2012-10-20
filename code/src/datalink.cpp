@@ -70,6 +70,8 @@ void dataLink::readSupervisionFrame(int fd, char *buf) {
 		case 1: {
 			if (readC == buf[1])
 				estado++;
+			else if (readC != buf[0])
+				estado = 0;
 			break;
 		}
 		case 2: {
@@ -77,6 +79,8 @@ void dataLink::readSupervisionFrame(int fd, char *buf) {
 				estado++;
 			else if (readC == buf[0])
 				estado = 1;
+			else
+				estado = 0;
 			break;
 		}
 		case 3: {
@@ -84,11 +88,15 @@ void dataLink::readSupervisionFrame(int fd, char *buf) {
 				estado++;
 			else if (readC == buf[0])
 				estado = 1;
+			else
+				estado = 0;
 			break;
 		}
 		case 4: {
 			if (readC == buf[4])
 				estado++;
+			else if (readC == buf[0])
+				estado = 1;
 			else
 				estado = 0;
 			break;
@@ -112,15 +120,19 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 		case 1: {
 			if (readC == rr[1]) // ADDRESS
 				estado++;
+			else if( readC != rr[0])
+				estado = 0;
 			break;
 		}
 		case 2: {
 			if (readC == rr[2]) // RR
 				estado++;
-			if (readC == rej[2]) // REJ
+			else if (readC == rej[2]) // REJ
 				estado = 4;
 			else if (readC == rr[0])
 				estado = 1;
+			else
+				estado = 0;
 			break;
 		}
 		case 3: {
@@ -128,6 +140,8 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 				estado = 5;
 			else if (readC == rr[0])
 				estado = 1;
+			else
+				estado = 0;
 			break;
 		}
 		case 4: {
@@ -135,6 +149,8 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 				estado = 6;
 			else if (readC == rej[0])
 				estado = 1;
+			else
+				estado = 0;
 			break;
 		}
 		case 5: {
