@@ -294,28 +294,8 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	frame[4 + length + 1] =FLAG;
 
 	// Receiver Ready
-	char rr[5];
-	rr[0] = FLAG;
-	rr[1] = ADDRESS_ER;
-	if (sequenceNumber == 0)
-		rr[2] = RR1;
-	else
-		rr[2] = RR0;
-	rr[3] = rr[1] ^ rr[2];
-	rr[4] = FLAG;
-
-	// or maybe a Reject
-	char rej[5];
-	rej[0] = FLAG;
-	rej[1] = ADDRESS_ER;
-	if (sequenceNumber == 0)
-		rej[2] = REJ0;
-	else
-		rej[2] = REJ1;
-	rej[3] = rej[1] ^ rej[2];
-	rej[4] = FLAG;
-
-	//cout << "Escrevi, ns= " << sequenceNumber << endl;
+	char rr[5],rej[5];
+	buildREJRR(sequenceNumber,rej, rr);
 
 	do {
 		dataLink::currentTimeout = timeout;
@@ -325,11 +305,12 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 		dataLink::currentFrameLength = 6 + length;
 
 		write(fd, frame, dataLink::currentFrameLength);
-		cout << "Escrevi!!\n" ;
+		cout << "Escrevi!!\n" << endl;
 		alarm(timeout);
-	} while (!isReceiverReady(fd, rr, rej));
-	alarm(0);
 
+	} while (!isReceiverReady(fd, rr, rej));
+
+	alarm(0);
 	sequenceNumber = !sequenceNumber;
 	return length;
 }
@@ -404,18 +385,41 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 	}
 
 }
+int dataLink::parseSequenceNumber(char *frame){
+	if(frame[2]==0x02) return 1;
+	else if (frame[2]==0x00) return 0;
+	return -1;
+}
 
+
+void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr){
+
+	// Receiver Ready
+	rr[0] = FLAG;
+	rr[1] = ADDRESS_ER;
+	if (sequenceNumber == 0)
+		rr[2] = RR1;
+	else
+		rr[2] = RR0;
+	rr[3] = rr[1] ^ rr[2];
+	rr[4] = FLAG;
+
+	// Reject
+	rej[0] = FLAG;
+	rej[1] = ADDRESS_ER;
+	if (sequenceNumber == 0)
+		rej[2] = REJ0;
+	else
+		rej[2] = REJ1;
+	rej[3] = rej[1] ^ rej[2];
+	rej[4] = FLAG;
+}
 int dataLink::llread(char *buf) {
+
 	int frameLen=readInformationFrame(fd,buf);
 	int dataLen=frameLen-6;
-	// Todo:
-	/* Rejeitar a mensagem se:
-	 * 	1) Não tem o comprimento mínimo da frame <7
-	 * 	2) BCC2 está errado.
-	 * Senão
-	 *  ReceiverReady (próxima sequência)
-	 *
-	 *  Implementar o parseSequenceNumber e o
-	 */
+	int sequenceNumber=parseSequenceNumber(buf);
+
+
 	return 1;
 }

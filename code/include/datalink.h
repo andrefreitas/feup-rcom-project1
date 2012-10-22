@@ -24,7 +24,7 @@ using namespace std;
 #define RR1 0x25
 #define REJ0 0x01
 #define REJ1 0x21
-
+// Data Link
 class dataLink {  
 		char port[20];
 		int baudRate;
@@ -40,6 +40,8 @@ class dataLink {
 		void readSupervisionFrame(int fd,char *buf);
 		bool isReceiverReady(int fd, char *rr, char *rej);
 		int readInformationFrame(int fd, char *buf);
+		int parseSequenceNumber(char *frame);
+		void buildREJRR(int sequenceNumber, char *rej, char *rr);
 		// -->
 		
 	public:
