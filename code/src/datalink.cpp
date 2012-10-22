@@ -379,6 +379,8 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 			if (readC == FLAG) {
 				buf[counter] = readC;
 				return counter + 1;
+			}else {
+				buf[counter] = readC;
 			}
 			break;
 
@@ -409,7 +411,7 @@ void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr) {
 
 	}
 
-	if(rej != 0){
+	if (rej != 0) {
 		// Reject
 		rej[0] = FLAG;
 		rej[1] = ADDRESS_ER;
@@ -422,42 +424,59 @@ void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr) {
 	}
 }
 
-bool dataLink::rejectFrame(char *frame, int frameLen){
+bool dataLink::rejectFrame(char *frame, int frameLen) {
 
-	int dataLen = frameLen - 6;
-	if (dataLen==0) return true;
+	int unsigned dataLen = frameLen - 6;
+	if (dataLen == 0)
+		return true;
 
-	// Todo: check BCC1 and BCC2
+	cout << endl;
+	// Check BCC1
+	if ((frame[1] ^ frame[2]) != frame[3]) {
+		cout << "\nErro no BCC1\n";
+		return true;
+	}
+
+	// Check BCC2
+	char bcc2ToCheck = 0;
+	for (int unsigned i = 0; i < dataLen; i++)
+		bcc2ToCheck = bcc2ToCheck ^ frame[4 + i];
+
+	if (bcc2ToCheck != frame[4 + dataLen]) {
+		printf( "\nErro no BCC2- Esperado: %x Calculado: %x\n", frame[4 + dataLen], bcc2ToCheck);
+		exit(-1);
+		return true;
+	}
 
 	return false;
 
 }
 int dataLink::llread(char *buf) {
 
-	while(1){
-		char frame[20];
+	while (1) {
+		char *frame=new char[20];
 		int frameLen = readInformationFrame(fd, frame);
-		int dataLen = frameLen - 6;
+		int unsigned dataLen = frameLen - 6;
 		int unsigned sReceived = parseSequenceNumber(frame);
 		char rej[5], rr[5];
 		buildREJRR(sequenceNumber, rej, rr);
 
-		// If the sequenceNumber is repeated
-		if(sReceived!=sequenceNumber){
+		// If the sequenceNumber is repeated ( need to check later)
+		if (sReceived != sequenceNumber) {
 			char rrWrongSequence[5];
-			buildREJRR(!sequenceNumber,0,rrWrongSequence);
-			write(fd,rrWrongSequence,5);
+			buildREJRR(!sequenceNumber, 0, rrWrongSequence);
+			write(fd, rrWrongSequence, 5);
 			return -1;
 		}
 
 		// Check errors
-		if(rejectFrame(frame,frameLen))
-			write(fd,rej,5);
-		else{
-			write(fd,rr,5);
-			sequenceNumber=!sequenceNumber;
-			for (int unsigned i=0; i<dataLen;i++){
-				buf[i]=frame[4+1];
+		if (rejectFrame(frame, frameLen))
+			write(fd, rej, 5);
+		else {
+			write(fd, rr, 5);
+			sequenceNumber = !sequenceNumber;
+			for (int unsigned i = 0; i < dataLen; i++) {
+				buf[i] = frame[4 + 1];
 			}
 			return dataLen;
 
