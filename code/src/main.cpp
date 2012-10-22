@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
 			//d.llclose(RECEIVER);
 			char * buf= new char[20];
 			d.llread(buf);
+			cout << "\nRecebi: " << buf;
 		}
 		else
 			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;

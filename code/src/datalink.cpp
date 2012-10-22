@@ -120,7 +120,7 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 		case 1: {
 			if (readC == rr[1]) // ADDRESS
 				estado++;
-			else if( readC != rr[0])
+			else if (readC != rr[0])
 				estado = 0;
 			break;
 		}
@@ -291,13 +291,15 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 		bcc2 = bcc2 ^ buf[i];
 	}
 	frame[4 + length] = bcc2;
-	frame[4 + length + 1] =FLAG;
+	frame[4 + length + 1] = FLAG;
 
 	// Receiver Ready
-	char rr[5],rej[5];
-	buildREJRR(sequenceNumber,rej, rr);
+	char rr[5], rej[5];
+	buildREJRR(sequenceNumber, rej, rr);
 
 	do {
+		alarm(0);
+
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
 		dataLink::currentFrame = frame;
@@ -324,7 +326,7 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 	while (1) {
 		read(fd, &readC, 1);
 		// Debug
-		printf("%x:st%d ",readC,estado);
+		printf("%x:st%d ", readC, estado);
 		counter++;
 		switch (estado) {
 		case 0:
@@ -376,7 +378,7 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 		case 6:
 			if (readC == FLAG) {
 				buf[counter] = readC;
-				return counter+1;
+				return counter + 1;
 			}
 			break;
 
@@ -385,41 +387,81 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 	}
 
 }
-int dataLink::parseSequenceNumber(char *frame){
-	if(frame[2]==0x02) return 1;
-	else if (frame[2]==0x00) return 0;
+int dataLink::parseSequenceNumber(char *frame) {
+	if (frame[2] == 0x02)
+		return 1;
+	else if (frame[2] == 0x00)
+		return 0;
 	return -1;
 }
 
+void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr) {
+	if (rr != 0) {
+		// Receiver Ready
+		rr[0] = FLAG;
+		rr[1] = ADDRESS_ER;
+		if (sequenceNumber == 0)
+			rr[2] = RR1;
+		else
+			rr[2] = RR0;
+		rr[3] = rr[1] ^ rr[2];
+		rr[4] = FLAG;
 
-void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr){
+	}
 
-	// Receiver Ready
-	rr[0] = FLAG;
-	rr[1] = ADDRESS_ER;
-	if (sequenceNumber == 0)
-		rr[2] = RR1;
-	else
-		rr[2] = RR0;
-	rr[3] = rr[1] ^ rr[2];
-	rr[4] = FLAG;
+	if(rej != 0){
+		// Reject
+		rej[0] = FLAG;
+		rej[1] = ADDRESS_ER;
+		if (sequenceNumber == 0)
+			rej[2] = REJ0;
+		else
+			rej[2] = REJ1;
+		rej[3] = rej[1] ^ rej[2];
+		rej[4] = FLAG;
+	}
+}
 
-	// Reject
-	rej[0] = FLAG;
-	rej[1] = ADDRESS_ER;
-	if (sequenceNumber == 0)
-		rej[2] = REJ0;
-	else
-		rej[2] = REJ1;
-	rej[3] = rej[1] ^ rej[2];
-	rej[4] = FLAG;
+bool dataLink::rejectFrame(char *frame, int frameLen){
+
+	int dataLen = frameLen - 6;
+	if (dataLen==0) return true;
+
+	// Todo: check BCC1 and BCC2
+
+	return false;
+
 }
 int dataLink::llread(char *buf) {
 
-	int frameLen=readInformationFrame(fd,buf);
-	int dataLen=frameLen-6;
-	int sequenceNumber=parseSequenceNumber(buf);
+	while(1){
+		char frame[20];
+		int frameLen = readInformationFrame(fd, frame);
+		int dataLen = frameLen - 6;
+		int unsigned sReceived = parseSequenceNumber(frame);
+		char rej[5], rr[5];
+		buildREJRR(sequenceNumber, rej, rr);
 
+		// If the sequenceNumber is repeated
+		if(sReceived!=sequenceNumber){
+			char rrWrongSequence[5];
+			buildREJRR(!sequenceNumber,0,rrWrongSequence);
+			write(fd,rrWrongSequence,5);
+			return -1;
+		}
 
-	return 1;
+		// Check errors
+		if(rejectFrame(frame,frameLen))
+			write(fd,rej,5);
+		else{
+			write(fd,rr,5);
+			sequenceNumber=!sequenceNumber;
+			for (int unsigned i=0; i<dataLen;i++){
+				buf[i]=frame[4+1];
+			}
+			return dataLen;
+
+		}
+	}
+	return -1;
 }

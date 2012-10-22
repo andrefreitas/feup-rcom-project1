@@ -42,6 +42,7 @@ class dataLink {
 		int readInformationFrame(int fd, char *buf);
 		int parseSequenceNumber(char *frame);
 		void buildREJRR(int sequenceNumber, char *rej, char *rr);
+		bool rejectFrame(char *frame, int frameLen);
 		// -->
 		
 	public:
