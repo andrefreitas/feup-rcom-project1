@@ -158,8 +158,7 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 			if (readC == rr[4]) {
 				cout << endl;
 				return true;
-			}
-			else
+			} else
 				estado = 0;
 			break;
 		}
@@ -167,8 +166,7 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 			if (readC == rej[4]) {
 				cout << endl;
 				return false;
-			}
-			else
+			} else
 				estado = 0;
 			break;
 		}
@@ -231,7 +229,6 @@ int dataLink::llclose(unsigned int who) {
 	ua[3] = ADDRESS_RE ^ UA;
 	ua[4] = FLAG;
 
-
 	char discT[5]; // disconect from Transmitter
 	discT[0] = FLAG;
 	discT[1] = ADDRESS_ER;
@@ -283,6 +280,7 @@ int dataLink::llclose(unsigned int who) {
 int dataLink::llwrite(char *buf, int unsigned length) {
 	// Data Frame
 	char frame[6 + length];
+	char* stuffedFrame = new char[40];
 	frame[0] = FLAG;
 	frame[1] = ADDRESS_ER;
 	frame[2] = 0x02 * sequenceNumber;
@@ -294,7 +292,7 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	}
 	frame[4 + length] = bcc2;
 	frame[4 + length + 1] = FLAG;
-
+	dataLink::currentFrameLength = stuffFrame(frame, 6+length, stuffedFrame);
 	// Receiver Ready
 	char rr[5], rej[5];
 	buildREJRR(sequenceNumber, rej, rr);
@@ -304,12 +302,11 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
-		dataLink::currentFrame = frame;
+		dataLink::currentFrame = stuffedFrame;
 		dataLink::reaminingAttempts = maxAttempts;
-		dataLink::currentFrameLength = 6 + length;
 
-		write(fd, frame, dataLink::currentFrameLength);
-		if(retries > 0)
+		write(fd, stuffedFrame, dataLink::currentFrameLength);
+		if (retries > 0)
 			cout << "*";
 		printf("%d -> ", sequenceNumber);
 		alarm(timeout);
@@ -356,10 +353,9 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 				buf[counter] = readC;
 			} else if (readC == FLAG)
 				estado = 1;
-			else if(readC == DISC) {
+			else if (readC == DISC) {
 				estado = 7;
-			}
-			else
+			} else
 				estado = 0;
 			break;
 
@@ -401,19 +397,18 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 			}
 			break;
 		case 7:
-			if(readC == (ADDRESS_ER ^ DISC))
+			if (readC == (ADDRESS_ER ^ DISC))
 				estado = 8;
-			else if(readC == FLAG)
+			else if (readC == FLAG)
 				estado = 1;
 			else
 				estado = 0;
 			break;
 		case 8:
-			if(readC == FLAG) {
+			if (readC == FLAG) {
 				cout << " DISC";
 				return -1;
-			}
-			else
+			} else
 				estado = 0;
 			break;
 		}
@@ -474,8 +469,8 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 		bcc2ToCheck = bcc2ToCheck ^ frame[4 + i];
 
 	if (bcc2ToCheck != frame[4 + dataLen]) {
-		printf(" Erro no BCC2- Esperado: %x Calculado: %x",
-				frame[4 + dataLen], bcc2ToCheck);
+		printf(" Erro no BCC2- Esperado: %x Calculado: %x", frame[4 + dataLen],
+				bcc2ToCheck);
 		return true;
 	}
 
@@ -488,7 +483,7 @@ int dataLink::llread(char *buf) {
 		char *frame = new char[20];
 		printf("%d -> ", sequenceNumber);
 		int frameLen = readInformationFrame(fd, frame);
-		if(frameLen == -1)
+		if (frameLen == -1)
 			return 0;
 		int unsigned dataLen = frameLen - 6;
 		int unsigned sReceived = parseSequenceNumber(frame);
@@ -507,14 +502,13 @@ int dataLink::llread(char *buf) {
 			if (rejectFrame(frame, frameLen)) {
 				write(fd, rej, 5);
 				cout << "\n  -> Enviou REJ" << sequenceNumber << endl;
-			}
-			else {
+			} else {
 				write(fd, rr, 5);
 				sequenceNumber = !sequenceNumber;
 				for (int unsigned i = 0; i < dataLen; i++) {
 					buf[i] = frame[4 + i];
 				}
-				cout << " \"" <<  buf << "\"" <<  endl;
+				cout << " \"" << buf << "\"" << endl;
 				cout << "  -> Enviou RR" << !sequenceNumber << endl;
 				return dataLen;
 
@@ -522,4 +516,29 @@ int dataLink::llread(char *buf) {
 		}
 	}
 	return -1;
+}
+
+int dataLink::stuffFrame(char* frame, int frameLen, char* newFrame) {
+	int i, j;
+
+	for (i = 0, j = 0; i < frameLen; i++, j++) {
+		if (i > 3 && i != (frameLen - 1)) {
+			if (frame[i] == FLAG) {
+				newFrame[j] = 0x7d;
+				newFrame[j + 1] = 0x5e;
+				j++;
+			}
+			else if(frame[i] == 0x7d) {
+				newFrame[j] = 0x7d;
+				newFrame[j + 1] = 0x5d;
+				j++;
+			}
+			else
+				newFrame[j] = frame[i]; //For the data bytes till BCC2
+		} else {
+			newFrame[j] = frame[i]; // For the first 4 bytes and the last one
+		}
+	}
+
+	return j;
 }

@@ -43,9 +43,12 @@ class dataLink {
 		int parseSequenceNumber(char *frame);
 		void buildREJRR(int sequenceNumber, char *rej, char *rr);
 		bool rejectFrame(char *frame, int frameLen);
+
+		int deStuffFrame(char* frame, int frameLen, char* newFrame);
 		// -->
 		
 	public:
+		static int stuffFrame(char* frame, int frameLen, char* newFrame);
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
 		static void handleTimeout(int signo);
 		static char *currentFrame;
