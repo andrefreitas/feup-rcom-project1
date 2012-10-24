@@ -481,10 +481,12 @@ int dataLink::llread(char *buf) {
 
 	while (1) {
 		char *frame = new char[20];
+		char* stuffedFrame = new char[40];
 		printf("%d -> ", sequenceNumber);
-		int frameLen = readInformationFrame(fd, frame);
-		if (frameLen == -1)
+		int stuffedFrameLen = readInformationFrame(fd, stuffedFrame);
+		if (stuffedFrameLen == -1)
 			return 0;
+		int frameLen = deStuffFrame(stuffedFrame,stuffedFrameLen,frame);
 		int unsigned dataLen = frameLen - 6;
 		int unsigned sReceived = parseSequenceNumber(frame);
 		char rej[5], rr[5];
@@ -532,6 +534,29 @@ int dataLink::stuffFrame(char* frame, int frameLen, char* newFrame) {
 				newFrame[j] = 0x7d;
 				newFrame[j + 1] = 0x5d;
 				j++;
+			}
+			else
+				newFrame[j] = frame[i]; //For the data bytes till BCC2
+		} else {
+			newFrame[j] = frame[i]; // For the first 4 bytes and the last one
+		}
+	}
+
+	return j;
+}
+
+int dataLink::deStuffFrame(char* frame, int frameLen, char* newFrame) {
+	int i, j;
+
+	for (i = 0, j = 0; i < frameLen; i++, j++) {
+		if (i > 3 && i != (frameLen - 1)) {
+			if (frame[i] == 0x7d && frame[i+1] == 0x5e) {
+				newFrame[j] = 0x7e;
+				i++;
+			}
+			else if(frame[i] == 0x7d && frame[i+1] == 0x5d) {
+				newFrame[j] = 0x7d;
+				i++;
 			}
 			else
 				newFrame[j] = frame[i]; //For the data bytes till BCC2
