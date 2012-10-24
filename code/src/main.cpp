@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 int main(int argc, char* argv[]) {
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
@@ -41,3 +42,38 @@ int main(int argc, char* argv[]) {
 		cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
 	return 0;
 }
+
+
+// TESTE DOS PACOTES REPETIDOS
+/*
+int main(int argc, char* argv[]) {
+	if (argc == 2) {
+		if (strcmp(argv[1], "transmitter") == 0) {
+			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+			d.llwrite((char *)"ABCD",4);
+			sleep(4); // Fazer Ctrl+C e voltar a reiniciar o transmitter
+			d.llwrite((char*) "E", 1);
+			printf("\n=== CLOSE ===\n");
+			d.llclose(TRANSMITTER);
+			//d.llwrite((char *)"ABCD",4);
+		}
+		else if (strcmp(argv[1], "receiver") == 0) {
+			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+			char * buf= new char[20];
+			while(d.llread(buf)) {
+				bzero(buf,20);
+			}
+			cout << endl;
+			printf("\n=== CLOSE ===\n");
+			d.llclose(RECEIVER);
+			//cout << "\nRecebi: " << buf << endl;
+		}
+		else
+			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
+	}
+	else
+		cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
+	return 0;
+}
+
+/*
