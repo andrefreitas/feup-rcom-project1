@@ -227,6 +227,7 @@ int dataLink::llclose(unsigned int who) {
 	ua[3] = ADDRESS_RE ^ UA;
 	ua[4] = FLAG;
 
+
 	char discT[5]; // disconect from Transmitter
 	discT[0] = FLAG;
 	discT[1] = ADDRESS_ER;
@@ -261,11 +262,7 @@ int dataLink::llclose(unsigned int who) {
 	}
 
 	if (who == RECEIVER) {
-		dataLink::currentFrame = discT;
-		dataLink::reaminingAttempts = maxAttempts;
 
-		readSupervisionFrame(fd, discT);
-		printf("Leu discT\n");
 		write(fd, discR, 5);
 		printf("Escreveu discR\n");
 		alarm(timeout);
@@ -342,7 +339,7 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 				estado++;
 				counter = 1;
 				buf[counter] = readC;
-			} else if(readC != FLAG)
+			} else if (readC != FLAG)
 				estado = 0;
 			break;
 		case 2:
@@ -353,6 +350,9 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 				buf[counter] = readC;
 			} else if (readC == FLAG)
 				estado = 1;
+			else if(readC == DISC) {
+				estado = 7;
+			}
 			else
 				estado = 0;
 			break;
@@ -390,11 +390,24 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 			if (readC == FLAG) {
 				buf[counter] = readC;
 				return counter + 1;
-			}else {
+			} else {
 				buf[counter] = readC;
 			}
 			break;
-
+		case 7:
+			if(readC == (ADDRESS_ER ^ DISC))
+				estado = 8;
+			else if(readC == FLAG)
+				estado = 1;
+			else
+				estado = 0;
+			break;
+		case 8:
+			if(readC == FLAG)
+				return -1;
+			else
+				estado = 0;
+			break;
 		}
 
 	}
@@ -454,7 +467,8 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 		bcc2ToCheck = bcc2ToCheck ^ frame[4 + i];
 
 	if (bcc2ToCheck != frame[4 + dataLen]) {
-		printf( "\nErro no BCC2- Esperado: %x Calculado: %x\n", frame[4 + dataLen], bcc2ToCheck);
+		printf("\nErro no BCC2- Esperado: %x Calculado: %x\n",
+				frame[4 + dataLen], bcc2ToCheck);
 		return true;
 	}
 
@@ -464,8 +478,10 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 int dataLink::llread(char *buf) {
 
 	while (1) {
-		char *frame=new char[20];
+		char *frame = new char[20];
 		int frameLen = readInformationFrame(fd, frame);
+		if(frameLen == -1)
+			return 0;
 		int unsigned dataLen = frameLen - 6;
 		int unsigned sReceived = parseSequenceNumber(frame);
 		char rej[5], rr[5];
@@ -476,20 +492,21 @@ int dataLink::llread(char *buf) {
 			char rrWrongSequence[5];
 			buildREJRR(!sequenceNumber, 0, rrWrongSequence);
 			write(fd, rrWrongSequence, 5);
-			return -1;
 		}
 
 		// Check errors
-		if (rejectFrame(frame, frameLen))
-			write(fd, rej, 5);
 		else {
-			write(fd, rr, 5);
-			sequenceNumber = !sequenceNumber;
-			for (int unsigned i = 0; i < dataLen; i++) {
-				buf[i] = frame[4 + i];
-			}
-			return dataLen;
+			if (rejectFrame(frame, frameLen))
+				write(fd, rej, 5);
+			else {
+				write(fd, rr, 5);
+				sequenceNumber = !sequenceNumber;
+				for (int unsigned i = 0; i < dataLen; i++) {
+					buf[i] = frame[4 + i];
+				}
+				return dataLen;
 
+			}
 		}
 	}
 	return -1;

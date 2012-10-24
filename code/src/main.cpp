@@ -11,16 +11,17 @@ int main(int argc, char* argv[]) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			//d.llopen(TRANSMITTER);
-			//d.llclose(TRANSMITTER);
-			d.llwrite((char *)"ABCD",4);
+			d.llclose(TRANSMITTER);
+			//d.llwrite((char *)"ABCD",4);
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			//d.llopen(RECEIVER);
 			//d.llclose(RECEIVER);
 			char * buf= new char[20];
-			d.llread(buf);
-			cout << "\nRecebi: " << buf << endl;
+			if(d.llread(buf) == 0)
+				d.llclose(RECEIVER);
+			//cout << "\nRecebi: " << buf << endl;
 		}
 		else
 			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
