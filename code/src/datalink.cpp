@@ -279,8 +279,8 @@ int dataLink::llclose(unsigned int who) {
 
 int dataLink::llwrite(char *buf, int unsigned length) {
 	// Data Frame
-	char frame[6 + length];
-	char* stuffedFrame = new char[40];
+	char frame[HALF_SIZE];
+	char* stuffedFrame = new char[MAX_SIZE];
 	frame[0] = FLAG;
 	frame[1] = ADDRESS_ER;
 	frame[2] = 0x02 * sequenceNumber;
@@ -480,8 +480,8 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 int dataLink::llread(char *buf) {
 
 	while (1) {
-		char *frame = new char[20];
-		char* stuffedFrame = new char[40];
+		char *frame = new char[HALF_SIZE];
+		char* stuffedFrame = new char[MAX_SIZE];
 		printf("%d -> ", sequenceNumber);
 		int stuffedFrameLen = readInformationFrame(fd, stuffedFrame);
 		if (stuffedFrameLen == -1)

@@ -1,3 +1,6 @@
+#ifndef DATALINK_H
+#define DATALINK_H
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -11,6 +14,7 @@
 
 using namespace std;
 
+#define HALF_SIZE 128
 #define MAX_SIZE 255
 #define TRANSMITTER 100
 #define RECEIVER 200
@@ -26,12 +30,11 @@ using namespace std;
 #define REJ1 0x21
 // Data Link
 class dataLink {  
-		char port[20];
+		char port[MAX_SIZE];
 		int baudRate;
 		unsigned int sequenceNumber;
 		unsigned int timeout;
 		unsigned int maxAttempts;
-		char frame[MAX_SIZE];
 		struct termios oldtio,newtio;
 		int unsigned fd;
 		// -->
@@ -62,3 +65,4 @@ class dataLink {
 		~dataLink();
 }; 
 
+#endif

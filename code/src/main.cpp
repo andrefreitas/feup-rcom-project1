@@ -1,22 +1,28 @@
 #include <iostream>
 #include "datalink.h"
+#include "appLayer.h"
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 using namespace std;
 
+int main() {
+	appLayer app((char*)"/usr/users2/mieic2008/ei08101/Desktop/pinguim.gif");
+	cout << app.sendFile();
+	return 0;
+}
 
-
-
+/*
 int main(int argc, char* argv[]) {
+
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 			printf("=== OPEN ===\n");
 			d.llopen(TRANSMITTER);
 			printf("\n=== DATA ===\n");
-			d.llwrite((char *)"ABC~",4);
+			d.llwrite((char *)"AB~C",4);
 			d.llwrite((char*) "}", 1);
 			printf("\n=== CLOSE ===\n");
 			d.llclose(TRANSMITTER);
@@ -45,7 +51,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-
+*/
 // TESTE DOS PACOTES REPETIDOS
 /*
 int main(int argc, char* argv[]) {
