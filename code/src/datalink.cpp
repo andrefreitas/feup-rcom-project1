@@ -111,22 +111,23 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 	char readC;
 	while (1) {
 		read(fd, &readC, 1);
+		printf("%x:st%d ", readC, estado);
 		switch (estado) {
 		case 0: {
 			if (readC == rr[0]) // FLAG
-				estado++;
+				estado = 1;
 			break;
 		}
 		case 1: {
 			if (readC == rr[1]) // ADDRESS
-				estado++;
+				estado = 2;
 			else if (readC != rr[0])
 				estado = 0;
 			break;
 		}
 		case 2: {
 			if (readC == rr[2]) // RR
-				estado++;
+				estado = 3;
 			else if (readC == rej[2]) // REJ
 				estado = 4;
 			else if (readC == rr[0])
@@ -313,6 +314,7 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	} while (!isReceiverReady(fd, rr, rej));
 
 	alarm(0);
+	printf("Sai!!\n");
 	sequenceNumber = !sequenceNumber;
 	return length;
 }
@@ -453,7 +455,6 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 
 	if (bcc2ToCheck != frame[4 + dataLen]) {
 		printf( "\nErro no BCC2- Esperado: %x Calculado: %x\n", frame[4 + dataLen], bcc2ToCheck);
-		exit(-1);
 		return true;
 	}
 
