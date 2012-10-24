@@ -321,13 +321,12 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 	int estado = 0;
 	char readC;
 	char C;
-	int counter = -1;
+	int counter;
 
 	while (1) {
 		read(fd, &readC, 1);
 		// Debug
 		printf("%x:st%d ", readC, estado);
-		counter++;
 		switch (estado) {
 		case 0:
 			if (readC == FLAG) {
@@ -339,43 +338,53 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 		case 1:
 			if (readC == ADDRESS_ER) {
 				estado++;
+				counter = 1;
 				buf[counter] = readC;
-			} else if (readC == FLAG)
+			} else if(readC != FLAG)
 				estado = 0;
 			break;
 		case 2:
 			if (readC == 0x02 || readC == 0x00) {
 				C = readC;
 				estado++;
+				counter = 2;
 				buf[counter] = readC;
 			} else if (readC == FLAG)
+				estado = 1;
+			else
 				estado = 0;
 			break;
 
 		case 3:
 			if (readC == (ADDRESS_ER ^ C)) {
 				estado++;
+				counter = 3;
 				buf[counter] = readC;
 			} else if (readC == FLAG)
+				estado = 1;
+			else
 				estado = 0;
 			break;
 		case 4:
 			if (readC == FLAG)
-				estado = 0;
+				estado = 1;
 			else {
 				estado++;
+				counter++;
 				buf[counter] = readC;
 			}
 			break;
 		case 5:
 			if (readC == FLAG)
-				estado = 0;
+				estado = 1;
 			else {
 				estado++;
+				counter++;
 				buf[counter] = readC;
 			}
 			break;
 		case 6:
+			counter++;
 			if (readC == FLAG) {
 				buf[counter] = readC;
 				return counter + 1;
@@ -476,7 +485,7 @@ int dataLink::llread(char *buf) {
 			write(fd, rr, 5);
 			sequenceNumber = !sequenceNumber;
 			for (int unsigned i = 0; i < dataLen; i++) {
-				buf[i] = frame[4 + 1];
+				buf[i] = frame[4 + i];
 			}
 			return dataLen;
 
