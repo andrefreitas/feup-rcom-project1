@@ -10,17 +10,28 @@ int main(int argc, char* argv[]) {
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-			//d.llopen(TRANSMITTER);
+			printf("=== OPEN ===\n");
+			d.llopen(TRANSMITTER);
+			printf("\n=== DATA ===\n");
+			d.llwrite((char *)"ABCD",4);
+			d.llwrite((char*) "E", 1);
+			printf("\n=== CLOSE ===\n");
 			d.llclose(TRANSMITTER);
 			//d.llwrite((char *)"ABCD",4);
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-			//d.llopen(RECEIVER);
+			printf("=== OPEN ===\n");
+			d.llopen(RECEIVER);
 			//d.llclose(RECEIVER);
+			printf("\n=== DATA ===\n");
 			char * buf= new char[20];
-			if(d.llread(buf) == 0)
-				d.llclose(RECEIVER);
+			while(d.llread(buf)) {
+				bzero(buf,20);
+			}
+			cout << endl;
+			printf("\n=== CLOSE ===\n");
+			d.llclose(RECEIVER);
 			//cout << "\nRecebi: " << buf << endl;
 		}
 		else

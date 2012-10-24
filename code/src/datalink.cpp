@@ -7,14 +7,14 @@ int dataLink::currentTimeout = 0;
 
 void dataLink::handleTimeout(int signo) {
 	if (dataLink::reaminingAttempts > 0) {
-		printf("Alarme. Tentativas restantes: %d\n",
+		printf("\n\nAlarme. Tentativas restantes: %d\n\n",
 				dataLink::reaminingAttempts);
 		write(dataLink::currentFD, dataLink::currentFrame,
 				dataLink::currentFrameLength);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
 	} else {
-		printf("Timeout !\n");
+		printf("\nTimeout !\n");
 		exit(0);
 	}
 }
@@ -155,15 +155,19 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 			break;
 		}
 		case 5: {
-			if (readC == rr[4])
+			if (readC == rr[4]) {
+				cout << endl;
 				return true;
+			}
 			else
 				estado = 0;
 			break;
 		}
 		case 6: {
-			if (readC == rej[4])
+			if (readC == rej[4]) {
+				cout << endl;
 				return false;
+			}
 			else
 				estado = 0;
 			break;
@@ -199,11 +203,11 @@ int dataLink::llopen(unsigned int who) {
 		dataLink::currentFrameLength = 5;
 
 		write(fd, set, 5);
-		printf("Emissor escreveu\n");
+		printf("-> Enviou SET\n");
 		alarm(timeout);
 		readSupervisionFrame(fd, ua);
 		alarm(0);
-		printf("Emissor recebeu o UA\n");
+		printf("<- Recebeu UA\n");
 
 		return fd;
 
@@ -211,9 +215,9 @@ int dataLink::llopen(unsigned int who) {
 
 		readSupervisionFrame(fd, set);
 
-		printf("Receptor recebeu SET\n");
+		printf("<- Recebeu SET\n");
 		write(fd, ua, 5);
-		printf("Emissor recebeu o UA\n");
+		printf("-> Enviou UA\n");
 		return fd;
 	}
 	return -1;
@@ -249,26 +253,26 @@ int dataLink::llclose(unsigned int who) {
 	if (who == TRANSMITTER) {
 
 		write(fd, discT, 5);
-		printf("Escreveu discT\n");
+		printf("-> Escreveu discT\n");
 		dataLink::currentFrame = discT;
 		dataLink::reaminingAttempts = maxAttempts;
 		alarm(timeout);
 		readSupervisionFrame(fd, discR);
 		alarm(0);
-		printf("Leu discR\n");
+		printf("<- Recebeu discR\n");
 		write(fd, ua, 5);
-		printf("Escreveu UA\n");
+		printf("-> Enviou UA\n");
 		return fd;
 	}
 
 	if (who == RECEIVER) {
 
 		write(fd, discR, 5);
-		printf("Escreveu discR\n");
+		printf("-> Enviou discR\n");
 		alarm(timeout);
 		readSupervisionFrame(fd, ua);
 		alarm(0);
-		printf("Leu UA\n");
+		printf("<- Recebeu UA\n");
 		return fd;
 	}
 
@@ -294,7 +298,7 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	// Receiver Ready
 	char rr[5], rej[5];
 	buildREJRR(sequenceNumber, rej, rr);
-
+	int retries = 0;
 	do {
 		alarm(0);
 
@@ -305,13 +309,15 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 		dataLink::currentFrameLength = 6 + length;
 
 		write(fd, frame, dataLink::currentFrameLength);
-		cout << "Escrevi!!\n" << endl;
+		if(retries > 0)
+			cout << "*";
+		printf("%d -> ", sequenceNumber);
 		alarm(timeout);
+		retries++;
 
 	} while (!isReceiverReady(fd, rr, rej));
 
 	alarm(0);
-	printf("Sai!!\n");
 	sequenceNumber = !sequenceNumber;
 	return length;
 }
@@ -403,8 +409,10 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 				estado = 0;
 			break;
 		case 8:
-			if(readC == FLAG)
+			if(readC == FLAG) {
+				cout << " DISC";
 				return -1;
+			}
 			else
 				estado = 0;
 			break;
@@ -454,10 +462,9 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 	if (dataLen == 0)
 		return true;
 
-	cout << endl;
 	// Check BCC1
 	if ((frame[1] ^ frame[2]) != frame[3]) {
-		cout << "\nErro no BCC1\n";
+		cout << " Erro no BCC1";
 		return true;
 	}
 
@@ -467,7 +474,7 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 		bcc2ToCheck = bcc2ToCheck ^ frame[4 + i];
 
 	if (bcc2ToCheck != frame[4 + dataLen]) {
-		printf("\nErro no BCC2- Esperado: %x Calculado: %x\n",
+		printf(" Erro no BCC2- Esperado: %x Calculado: %x",
 				frame[4 + dataLen], bcc2ToCheck);
 		return true;
 	}
@@ -479,6 +486,7 @@ int dataLink::llread(char *buf) {
 
 	while (1) {
 		char *frame = new char[20];
+		printf("%d -> ", sequenceNumber);
 		int frameLen = readInformationFrame(fd, frame);
 		if(frameLen == -1)
 			return 0;
@@ -496,14 +504,18 @@ int dataLink::llread(char *buf) {
 
 		// Check errors
 		else {
-			if (rejectFrame(frame, frameLen))
+			if (rejectFrame(frame, frameLen)) {
 				write(fd, rej, 5);
+				cout << "\n  -> Enviou REJ" << sequenceNumber << endl;
+			}
 			else {
 				write(fd, rr, 5);
 				sequenceNumber = !sequenceNumber;
 				for (int unsigned i = 0; i < dataLen; i++) {
 					buf[i] = frame[4 + i];
 				}
+				cout << " \"" <<  buf << "\"" <<  endl;
+				cout << "  -> Enviou RR" << !sequenceNumber << endl;
 				return dataLen;
 
 			}
