@@ -7,26 +7,29 @@ appLayer::appLayer(char* filePath) {
 
 int appLayer::sendFile() {
 	FILE* pFile;
-	char* package = new char[HALF_SIZE];
+	char* startPackage = new char[HALF_SIZE];
 
 	pFile = fopen(filePath,"r");
-
 	if (pFile == NULL)
 		return -1;
-
 	fseek(pFile,0,SEEK_END);
 	int fileSize = ftell(pFile);
 	rewind(pFile);
 
-	buildStartPackage(filePath,package,fileSize);
-
+	//buildControlPackage(filePath,startPackage,fileSize,0x01);
+	unsigned char *dataPackage=new unsigned char [512];
+	int pLen=buildDataPackage(dataPackage,(char*)"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",256);
+	for (int i=0; i<pLen; i++){
+		printf("%x " , dataPackage[i]);
+	}
+	cout << endl;
 	return 0;
 }
 
-int appLayer::buildStartPackage(char* filePath, char* package, int fileSize) {
+int appLayer::buildControlPackage(char* filePath, char* package, int fileSize,char control) {
 	char fileSizestr[MAX_SIZE];
 	int fileSizeLen,packageLen;
-	package[0] = 0x01; // Start Package
+	package[0] = control;
 
 	// Size of the file
 	package[1] = 0x00;
@@ -47,12 +50,31 @@ int appLayer::buildStartPackage(char* filePath, char* package, int fileSize) {
 	// The package length
 	packageLen=5+fileSizeLen+filePathLen;
 
-	for(int i=0; i<packageLen; i++){
-		printf("%c:%x ",package[i],package[i]);
-
-	}
-	cout << endl;
-
 	return packageLen;
+}
 
+int appLayer::buildDataPackage(unsigned char* package,char* data, int index){
+	char sequenceNumber=index%255;
+	int dataLen=strlen(data);
+	if(dataLen>65535) // Limit exceeded
+		return -1;
+
+	package[0]=0x00;
+	package[1]=sequenceNumber;
+
+	// l2 and l1
+	if(dataLen>0xff){
+		package[2]=dataLen>>8;
+		package[3]=dataLen & 0x00FF;
+	}
+	else {
+		package[2]=0x00;
+		package[3]=dataLen;
+	}
+
+	// fill with the data
+	for(int i=4;i<(dataLen+4); i++){
+		package[i]=data[i-4];
+	}
+	return (4+dataLen);
 }
