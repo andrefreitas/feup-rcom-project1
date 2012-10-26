@@ -21,12 +21,12 @@ int appLayer::sendFile() {
 	fseek(pFile, 0, SEEK_END);
 	int fileSize = ftell(pFile);
 	rewind(pFile);
-	dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+	dataLink *d = new dataLink((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 	printf("=== OPEN ===\n");
-	d.llopen(TRANSMITTER);
+	d->llopen(TRANSMITTER);
 	printf("\n=== DATA ===\n");
 	packageLen = buildControlPackage(filePath, package, fileSize, 0x01);
-	d.llwrite(package, packageLen);
+	d->llwrite(package, packageLen);
 	while (1) {
 		bzero(buf, HALF_SIZE);
 		bzero(package, HALF_SIZE);
@@ -34,7 +34,7 @@ int appLayer::sendFile() {
 		if (bufLen == 0)
 			break;
 		packageLen = buildDataPackage(package, buf, index, bufLen);
-		d.llwrite(package, packageLen);
+		d->llwrite(package, packageLen);
 		index++;
 	}
 
@@ -43,7 +43,7 @@ int appLayer::sendFile() {
 	//d.llwrite(package, packageLen);
 
 	printf("\n=== CLOSE ===\n");
-	d.llclose(TRANSMITTER);
+	d->llclose(TRANSMITTER);
 	return 0;
 }
 
@@ -101,7 +101,7 @@ int appLayer::buildDataPackage(unsigned char* package, unsigned char* data, int 
 }
 
 int appLayer::receiveFile() {
-	dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+	dataLink * d = new dataLink((char*) MODEMDEVICE, BAUDRATE, 3, 3);
 	int bufLen;
 	FILE* pFile;
 	unsigned char* package = new unsigned char[HALF_SIZE];
@@ -111,22 +111,22 @@ int appLayer::receiveFile() {
 	pFile = fopen(filePath, "wb");
 
 	printf("=== OPEN ===\n");
-	d.llopen(RECEIVER);
+	d->llopen(RECEIVER);
 	printf("\n=== DATA ===\n");
-	d.llread(buf);
+	d->llread(buf);
 	bzero(buf, HALF_SIZE);
 
-	while (bufLen =d.llread(buf)) {
-		bufLen -= 6;
+	while (bufLen =d->llread(buf)) {
+		bufLen -= 4;
 		data = buf + 4;
-		fwrite(data, 1, bufLen - 4, pFile);
+		fwrite(data, 1, bufLen, pFile);
 		bzero(buf, HALF_SIZE);
 	}
-
+	fclose(pFile);
 	//d.llread(buf);
 	cout << endl;
 	printf("\n=== CLOSE ===\n");
-	d.llclose(RECEIVER);
+	d->llclose(RECEIVER);
 	//cout << "\nRecebi: " << buf << endl;
 	return 0;
 }

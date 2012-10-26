@@ -18,12 +18,12 @@ int main(int argc, char* argv[]) {
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
-			appLayer app((char*)"/home/ubfeup/pinguim.gif");
-			app.sendFile();
+			appLayer * app = new appLayer((char*)"/usr/users2/mieic2010/ei10086/Desktop/pinguim.gif");
+			app->sendFile();
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
-			appLayer app((char*)"/home/ubfeup/pinguim.gif");
-			app.receiveFile();
+			appLayer * app = new appLayer((char*)"/usr/users2/mieic2010/ei10086/Desktop/pinguim.gif");
+			app->receiveFile();
 		}
 		else
 			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;

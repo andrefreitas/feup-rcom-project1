@@ -14,8 +14,8 @@
 
 using namespace std;
 
-#define HALF_SIZE 128
-#define MAX_SIZE 255
+#define HALF_SIZE 256
+#define MAX_SIZE 512
 #define TRANSMITTER 100
 #define RECEIVER 200
 #define FLAG 0x7E
