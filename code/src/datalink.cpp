@@ -464,7 +464,7 @@ bool dataLink::rejectFrame(unsigned char *frame, int frameLen) {
 	}
 
 	// Check BCC2
-	char bcc2ToCheck = 0;
+	unsigned char bcc2ToCheck = 0;
 	for (int unsigned i = 0; i < dataLen; i++)
 		bcc2ToCheck = bcc2ToCheck ^ frame[4 + i];
 
