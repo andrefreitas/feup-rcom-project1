@@ -3,8 +3,8 @@
 
 class appLayer {
 	char* filePath;
-	int buildControlPackage(char* filePath, char* package, int fileSize,char control);
-	int buildDataPackage(char* package,char* data, int index);
+	int buildControlPackage(char* filePath, unsigned char* package, int fileSize,unsigned char control);
+	int buildDataPackage(unsigned char* package,unsigned char* data, int index,int dataLen);
 
 public:
 	appLayer(char* filePath);

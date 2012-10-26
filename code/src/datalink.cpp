@@ -1,5 +1,5 @@
 #include "datalink.h"
-char* dataLink::currentFrame = 0;
+unsigned char* dataLink::currentFrame = 0;
 int dataLink::reaminingAttempts = 0;
 int dataLink::currentFrameLength = 0;
 int dataLink::currentFD = 0;
@@ -56,9 +56,9 @@ void dataLink::restoreSerialPort() {
 	close(fd);
 }
 
-void dataLink::readSupervisionFrame(int fd, char *buf) {
+void dataLink::readSupervisionFrame(int fd, unsigned char*buf) {
 	int estado = 0;
-	char readC;
+	unsigned char readC;
 	while (estado < 5) {
 		read(fd, &readC, 1);
 		switch (estado) {
@@ -106,9 +106,9 @@ void dataLink::readSupervisionFrame(int fd, char *buf) {
 	}
 }
 
-bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
+bool dataLink::isReceiverReady(int fd, unsigned char* rr, unsigned char* rej) {
 	int estado = 0;
-	char readC;
+	unsigned char readC;
 	while (1) {
 		read(fd, &readC, 1);
 		printf("%x:st%d ", readC, estado);
@@ -178,14 +178,14 @@ bool dataLink::isReceiverReady(int fd, char* rr, char* rej) {
 }
 
 int dataLink::llopen(unsigned int who) {
-	char set[5];
+	unsigned char set[5];
 	set[0] = FLAG;
 	set[1] = ADDRESS_ER;
 	set[2] = SET;
 	set[3] = ADDRESS_ER ^ SET;
 	set[4] = FLAG;
 
-	char ua[5];
+	unsigned char ua[5];
 	ua[0] = FLAG;
 	ua[1] = ADDRESS_ER;
 	ua[2] = UA;
@@ -222,21 +222,21 @@ int dataLink::llopen(unsigned int who) {
 }
 int dataLink::llclose(unsigned int who) {
 
-	char ua[5];
+	unsigned char ua[5];
 	ua[0] = FLAG;
 	ua[1] = ADDRESS_RE;
 	ua[2] = UA;
 	ua[3] = ADDRESS_RE ^ UA;
 	ua[4] = FLAG;
 
-	char discT[5]; // disconect from Transmitter
+	unsigned char discT[5]; // disconect from Transmitter
 	discT[0] = FLAG;
 	discT[1] = ADDRESS_ER;
 	discT[2] = DISC;
 	discT[3] = ADDRESS_ER ^ DISC;
 	discT[4] = FLAG;
 
-	char discR[5]; // disconnect from Receiver
+	unsigned char discR[5]; // disconnect from Receiver
 	discR[0] = FLAG;
 	discR[1] = ADDRESS_RE;
 	discR[2] = DISC;
@@ -277,10 +277,10 @@ int dataLink::llclose(unsigned int who) {
 
 }
 
-int dataLink::llwrite(char *buf, int unsigned length) {
+int dataLink::llwrite(unsigned char *buf, int unsigned length) {
 	// Data Frame
-	char frame[HALF_SIZE];
-	char* stuffedFrame = new char[MAX_SIZE];
+	unsigned char frame[HALF_SIZE];
+	unsigned char* stuffedFrame = new unsigned char[MAX_SIZE];
 	frame[0] = FLAG;
 	frame[1] = ADDRESS_ER;
 	frame[2] = 0x02 * sequenceNumber;
@@ -294,7 +294,7 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	frame[4 + length + 1] = FLAG;
 	dataLink::currentFrameLength = stuffFrame(frame, 6+length, stuffedFrame);
 	// Receiver Ready
-	char rr[5], rej[5];
+	unsigned char rr[5], rej[5];
 	buildREJRR(sequenceNumber, rej, rr);
 	int retries = 0;
 	do {
@@ -319,10 +319,10 @@ int dataLink::llwrite(char *buf, int unsigned length) {
 	return length;
 }
 
-int dataLink::readInformationFrame(int fd, char *buf) {
+int dataLink::readInformationFrame(int fd, unsigned char *buf) {
 	int estado = 0;
-	char readC;
-	char C;
+	unsigned char readC;
+	unsigned char C;
 	int counter;
 
 	while (1) {
@@ -416,7 +416,7 @@ int dataLink::readInformationFrame(int fd, char *buf) {
 	}
 
 }
-int dataLink::parseSequenceNumber(char *frame) {
+int dataLink::parseSequenceNumber(unsigned char *frame) {
 	if (frame[2] == 0x02)
 		return 1;
 	else if (frame[2] == 0x00)
@@ -424,7 +424,7 @@ int dataLink::parseSequenceNumber(char *frame) {
 	return -1;
 }
 
-void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr) {
+void dataLink::buildREJRR(int sequenceNumber, unsigned char *rej, unsigned char *rr) {
 	if (rr != 0) {
 		// Receiver Ready
 		rr[0] = FLAG;
@@ -451,7 +451,7 @@ void dataLink::buildREJRR(int sequenceNumber, char *rej, char *rr) {
 	}
 }
 
-bool dataLink::rejectFrame(char *frame, int frameLen) {
+bool dataLink::rejectFrame(unsigned char *frame, int frameLen) {
 
 	int unsigned dataLen = frameLen - 6;
 	if (dataLen == 0)
@@ -477,11 +477,11 @@ bool dataLink::rejectFrame(char *frame, int frameLen) {
 	return false;
 
 }
-int dataLink::llread(char *buf) {
+int dataLink::llread(unsigned char *buf) {
 
 	while (1) {
-		char *frame = new char[HALF_SIZE];
-		char* stuffedFrame = new char[MAX_SIZE];
+		unsigned char *frame = new unsigned char[HALF_SIZE];
+		unsigned char* stuffedFrame = new unsigned char[MAX_SIZE];
 		printf("%d -> ", sequenceNumber);
 		int stuffedFrameLen = readInformationFrame(fd, stuffedFrame);
 		if (stuffedFrameLen == -1)
@@ -489,12 +489,12 @@ int dataLink::llread(char *buf) {
 		int frameLen = deStuffFrame(stuffedFrame,stuffedFrameLen,frame);
 		int unsigned dataLen = frameLen - 6;
 		int unsigned sReceived = parseSequenceNumber(frame);
-		char rej[5], rr[5];
+		unsigned char rej[5], rr[5];
 		buildREJRR(sequenceNumber, rej, rr);
 
 		// If the sequenceNumber is repeated ( need to check later)
 		if (sReceived != sequenceNumber) {
-			char rrWrongSequence[5];
+			unsigned char rrWrongSequence[5];
 			buildREJRR(!sequenceNumber, 0, rrWrongSequence);
 			write(fd, rrWrongSequence, 5);
 		}
@@ -520,7 +520,7 @@ int dataLink::llread(char *buf) {
 	return -1;
 }
 
-int dataLink::stuffFrame(char* frame, int frameLen, char* newFrame) {
+int dataLink::stuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame) {
 	int i, j;
 
 	for (i = 0, j = 0; i < frameLen; i++, j++) {
@@ -545,7 +545,7 @@ int dataLink::stuffFrame(char* frame, int frameLen, char* newFrame) {
 	return j;
 }
 
-int dataLink::deStuffFrame(char* frame, int frameLen, char* newFrame) {
+int dataLink::deStuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame) {
 	int i, j;
 
 	for (i = 0, j = 0; i < frameLen; i++, j++) {

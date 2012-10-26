@@ -6,13 +6,13 @@
 
 appLayer::appLayer(char* filePath) {
 	this->filePath = new char[MAX_SIZE];
-	strcpy(this->filePath, filePath);
+	this->filePath = filePath;
 }
 
 int appLayer::sendFile() {
 	FILE* pFile;
-	char* package = new char[HALF_SIZE];
-	char* buf = new char[HALF_SIZE];
+	unsigned char* package = new unsigned char[HALF_SIZE];
+	unsigned char* buf = new unsigned char[HALF_SIZE];
 	int bufLen, packageLen, index = 0;
 
 	pFile = fopen(filePath, "r");
@@ -33,7 +33,7 @@ int appLayer::sendFile() {
 		bufLen = fread(buf, 1, READSIZE, pFile);
 		if (bufLen == 0)
 			break;
-		packageLen = buildDataPackage(package, buf, index);
+		packageLen = buildDataPackage(package, buf, index, bufLen);
 		d.llwrite(package, packageLen);
 		index++;
 	}
@@ -47,8 +47,8 @@ int appLayer::sendFile() {
 	return 0;
 }
 
-int appLayer::buildControlPackage(char* filePath, char* package, int fileSize,
-		char control) {
+int appLayer::buildControlPackage(char* filePath, unsigned char* package, int fileSize,
+		unsigned char control) {
 	char fileSizestr[MAX_SIZE];
 	int fileSizeLen, packageLen;
 	package[0] = control;
@@ -75,9 +75,9 @@ int appLayer::buildControlPackage(char* filePath, char* package, int fileSize,
 	return packageLen;
 }
 
-int appLayer::buildDataPackage(char* package, char* data, int index) {
-	char sequenceNumber = index % 255;
-	int dataLen = strlen(data);
+int appLayer::buildDataPackage(unsigned char* package, unsigned char* data, int index, int dataLen) {
+	unsigned char sequenceNumber = index % 255;
+
 	if (dataLen > 65535) // Limit exceeded
 		return -1;
 
@@ -102,12 +102,11 @@ int appLayer::buildDataPackage(char* package, char* data, int index) {
 
 int appLayer::receiveFile() {
 	dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-	int bufLen, packageLen, index = 0;
-	FILE* pFile;
-	char* package = new char[HALF_SIZE];
-	char* buf = new char[HALF_SIZE];
-	char* data;
 	int bufLen;
+	FILE* pFile;
+	unsigned char* package = new unsigned char[HALF_SIZE];
+	unsigned char* buf = new unsigned char[HALF_SIZE];
+	unsigned char* data;
 
 	pFile = fopen(filePath, "wb");
 
@@ -115,13 +114,13 @@ int appLayer::receiveFile() {
 	d.llopen(RECEIVER);
 	printf("\n=== DATA ===\n");
 	d.llread(buf);
-	bzero(buf,HALF_SIZE);
+	bzero(buf, HALF_SIZE);
 
-	while (d.llread(buf)) {
-		bufLen = strlen(buf);
-		data = buf+4;
-		fwrite(data,1,bufLen-4,pFile);
-		bzero(buf,HALF_SIZE);
+	while (bufLen =d.llread(buf)) {
+		bufLen -= 6;
+		data = buf + 4;
+		fwrite(data, 1, bufLen - 4, pFile);
+		bzero(buf, HALF_SIZE);
 	}
 
 	//d.llread(buf);

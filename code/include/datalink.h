@@ -40,28 +40,28 @@ class dataLink {
 		// -->
 		void setupSerialPort();
 		void restoreSerialPort();
-		void readSupervisionFrame(int fd,char *buf);
-		bool isReceiverReady(int fd, char *rr, char *rej);
-		int readInformationFrame(int fd, char *buf);
-		int parseSequenceNumber(char *frame);
-		void buildREJRR(int sequenceNumber, char *rej, char *rr);
-		bool rejectFrame(char *frame, int frameLen);
-		static int stuffFrame(char* frame, int frameLen, char* newFrame);
-		static int deStuffFrame(char* frame, int frameLen, char* newFrame);
+		void readSupervisionFrame(int fd,unsigned char*buf);
+		bool isReceiverReady(int fd, unsigned char *rr, unsigned char *rej);
+		int readInformationFrame(int fd, unsigned char *buf);
+		int parseSequenceNumber(unsigned char *frame);
+		void buildREJRR(int sequenceNumber, unsigned char *rej, unsigned char *rr);
+		bool rejectFrame(unsigned char *frame, int frameLen);
+		static int stuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame);
+		static int deStuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame);
 		// -->
 		
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
 		static void handleTimeout(int signo);
-		static char *currentFrame;
+		static unsigned char *currentFrame;
 		static int reaminingAttempts;
 		static int currentFD;
 		static int currentTimeout;
 		static int currentFrameLength;
 		int llopen(unsigned int who);
 		int llclose(unsigned int who);
-		int llwrite(char *buf,int unsigned length);
-		int llread(char *buf);
+		int llwrite(unsigned char *buf,int unsigned length);
+		int llread(unsigned char *buf);
 		~dataLink();
 }; 
 
