@@ -285,7 +285,7 @@ int dataLink::llwrite(unsigned char *buf, int unsigned length) {
 	frame[1] = ADDRESS_ER;
 	frame[2] = 0x02 * sequenceNumber;
 	frame[3] = frame[1] ^ frame[2];
-	char bcc2 = 0;
+	unsigned char bcc2 = 0;
 	for (int unsigned i = 0; i < length; i++) {
 		frame[4 + i] = buf[i];
 		bcc2 = bcc2 ^ buf[i];
