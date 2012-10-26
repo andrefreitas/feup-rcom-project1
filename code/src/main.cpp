@@ -18,23 +18,12 @@ int main(int argc, char* argv[]) {
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
-			appLayer app((char*)"/home/ubfeup/Desktop/pinguim.gif");
+			appLayer app((char*)"/home/ubfeup/pinguim.gif");
 			app.sendFile();
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
-			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-			printf("=== OPEN ===\n");
-			d.llopen(RECEIVER);
-			//d.llclose(RECEIVER);
-			printf("\n=== DATA ===\n");
-			char * buf= new char[20];
-			while(d.llread(buf)) {
-				bzero(buf,20);
-			}
-			cout << endl;
-			printf("\n=== CLOSE ===\n");
-			d.llclose(RECEIVER);
-			//cout << "\nRecebi: " << buf << endl;
+			appLayer app((char*)"/home/ubfeup/pinguim.gif");
+			app.receiveFile();
 		}
 		else
 			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;

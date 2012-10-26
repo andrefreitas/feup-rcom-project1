@@ -26,29 +26,29 @@ int appLayer::sendFile() {
 	d.llopen(TRANSMITTER);
 	printf("\n=== DATA ===\n");
 	packageLen = buildControlPackage(filePath, package, fileSize, 0x01);
-	d.llwrite(package,packageLen);
+	d.llwrite(package, packageLen);
 	while (1) {
-		bzero(buf,HALF_SIZE);
-		bzero(package,HALF_SIZE);
-		 bufLen = fread(buf, 1, READSIZE, pFile);
-		 if(bufLen == 0)
-			 break;
+		bzero(buf, HALF_SIZE);
+		bzero(package, HALF_SIZE);
+		bufLen = fread(buf, 1, READSIZE, pFile);
+		if (bufLen == 0)
+			break;
 		packageLen = buildDataPackage(package, buf, index);
-		d.llwrite(package,packageLen);
+		d.llwrite(package, packageLen);
 		index++;
 	}
 
-	bzero(package,HALF_SIZE);
+	bzero(package, HALF_SIZE);
 	packageLen = buildControlPackage(filePath, package, fileSize, 0x02);
-	d.llwrite(package, packageLen);
+	//d.llwrite(package, packageLen);
 
 	printf("\n=== CLOSE ===\n");
 	d.llclose(TRANSMITTER);
 	return 0;
 }
 
-int appLayer::buildControlPackage(char* filePath, char* package,
-		int fileSize, char control) {
+int appLayer::buildControlPackage(char* filePath, char* package, int fileSize,
+		char control) {
 	char fileSizestr[MAX_SIZE];
 	int fileSizeLen, packageLen;
 	package[0] = control;
@@ -98,4 +98,36 @@ int appLayer::buildDataPackage(char* package, char* data, int index) {
 		package[i] = data[i - 4];
 	}
 	return (4 + dataLen);
+}
+
+int appLayer::receiveFile() {
+	dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+	int bufLen, packageLen, index = 0;
+	FILE* pFile;
+	char* package = new char[HALF_SIZE];
+	char* buf = new char[HALF_SIZE];
+	char* data;
+	int bufLen;
+
+	pFile = fopen(filePath, "wb");
+
+	printf("=== OPEN ===\n");
+	d.llopen(RECEIVER);
+	printf("\n=== DATA ===\n");
+	d.llread(buf);
+	bzero(buf,HALF_SIZE);
+
+	while (d.llread(buf)) {
+		bufLen = strlen(buf);
+		data = buf+4;
+		fwrite(data,1,bufLen-4,pFile);
+		bzero(buf,HALF_SIZE);
+	}
+
+	//d.llread(buf);
+	cout << endl;
+	printf("\n=== CLOSE ===\n");
+	d.llclose(RECEIVER);
+	//cout << "\nRecebi: " << buf << endl;
+	return 0;
 }
