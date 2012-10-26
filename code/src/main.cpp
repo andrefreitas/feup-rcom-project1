@@ -18,15 +18,8 @@ int main(int argc, char* argv[]) {
 
 	if (argc == 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
-			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
-			printf("=== OPEN ===\n");
-			d.llopen(TRANSMITTER);
-			printf("\n=== DATA ===\n");
-			d.llwrite((char *)"AB~C",4);
-			d.llwrite((char*) "}", 1);
-			printf("\n=== CLOSE ===\n");
-			d.llclose(TRANSMITTER);
-			//d.llwrite((char *)"ABCD",4);
+			appLayer app((char*)"/home/ubfeup/Desktop/pinguim.gif");
+			app.sendFile();
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			dataLink d((char*) MODEMDEVICE, BAUDRATE, 3, 3);
