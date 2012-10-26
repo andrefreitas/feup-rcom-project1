@@ -8,7 +8,7 @@
 using namespace std;
 
 int main() {
-	appLayer app((char*)"/usr/users2/mieic2008/ei08101/Desktop/pinguim.gif");
+	appLayer app((char*)"/usr/users2/mieic2010/ei10036/Desktop/pinguim.gif");
 	cout << app.sendFile();
 	return 0;
 }

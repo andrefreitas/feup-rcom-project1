@@ -13,6 +13,7 @@ int appLayer::sendFile() {
 
 	if (pFile == NULL)
 		return -1;
+
 	fseek(pFile,0,SEEK_END);
 	int fileSize = ftell(pFile);
 	rewind(pFile);
@@ -22,19 +23,36 @@ int appLayer::sendFile() {
 	return 0;
 }
 
-void appLayer::buildStartPackage(char* filePath, char* package, int fileSize) {
+int appLayer::buildStartPackage(char* filePath, char* package, int fileSize) {
 	char fileSizestr[MAX_SIZE];
-	int fileSizelen;
+	int fileSizeLen,packageLen;
 	package[0] = 0x01; // Start Package
-	package[1] = 0x00; // Size of the file
-	fileSizelen = sprintf (fileSizestr, "%d", fileSize);
-	package[2] = fileSizelen;
-	for(int i = 3; i < (fileSizelen+3); i++) {
+
+	// Size of the file
+	package[1] = 0x00;
+	fileSizeLen = sprintf (fileSizestr, "%d", fileSize);
+	package[2] = fileSizeLen;
+	for(int i = 3; i < (fileSizeLen+3); i++) {
 		package[i] = fileSizestr[i-3];
 	}
 
-	for(int i = 0; i < 8 ; i++) {
-		printf("%x ", package[i]);
+	// Name of the file
+	int filePathLen=strlen(filePath);
+	package[3+fileSizeLen]=0x01;
+	package[4+fileSizeLen]=filePathLen;
+	for(int i = (5+fileSizeLen); i<(filePathLen+5+fileSizeLen);i++){
+		package[i]=filePath[i-(5+fileSizeLen)];
+	}
+
+	// The package length
+	packageLen=5+fileSizeLen+filePathLen;
+
+	for(int i=0; i<packageLen; i++){
+		printf("%c:%x ",package[i],package[i]);
+
 	}
 	cout << endl;
+
+	return packageLen;
+
 }
