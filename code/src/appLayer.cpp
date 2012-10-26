@@ -17,12 +17,6 @@ int appLayer::sendFile() {
 	rewind(pFile);
 
 	//buildControlPackage(filePath,startPackage,fileSize,0x01);
-	unsigned char *dataPackage=new unsigned char [512];
-	int pLen=buildDataPackage(dataPackage,(char*)"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",256);
-	for (int i=0; i<pLen; i++){
-		printf("%x " , dataPackage[i]);
-	}
-	cout << endl;
 	return 0;
 }
 

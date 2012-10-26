@@ -6,14 +6,14 @@
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 using namespace std;
-
+/*
 int main() {
 	appLayer app((char*)"/usr/users2/mieic2010/ei10036/Desktop/pinguim.gif");
 	cout << app.sendFile();
 	return 0;
 }
 
-/*
+*/
 int main(int argc, char* argv[]) {
 
 	if (argc == 2) {
@@ -51,7 +51,6 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-*/
 // TESTE DOS PACOTES REPETIDOS
 /*
 int main(int argc, char* argv[]) {
