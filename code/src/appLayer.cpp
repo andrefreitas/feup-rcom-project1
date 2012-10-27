@@ -1,8 +1,4 @@
 #include "appLayer.h"
-#define READSIZE 4000
-#define BAUDRATE B38400
-#define MODEMDEVICE "/dev/ttyS0"
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 appLayer::appLayer() {
 	this->filePath = new char[MAX_SIZE];
@@ -121,7 +117,6 @@ int appLayer::receiveFile() {
 	dataLink * d = new dataLink((char*) MODEMDEVICE, baudrate, timeout, maxAttempts);
 	int bufLen;
 	FILE* pFile;
-	unsigned char* package = new unsigned char[HALF_SIZE];
 	unsigned char* buf = new unsigned char[HALF_SIZE];
 	unsigned char* data;
 	
@@ -141,7 +136,7 @@ int appLayer::receiveFile() {
 	pFile = fopen(filePath, "wb");
 
 	bzero(buf, HALF_SIZE);
-	while (bufLen =d->llread(buf)) {
+	while ((bufLen = d->llread(buf))) {
 		bufLen -= 4;
 		data = buf + 4;
 		fwrite(data, 1, bufLen, pFile);
@@ -204,16 +199,15 @@ int appLayer::parseFileName(unsigned char *buf,char *filePath, int bufLen){
 	for(i=3; i<(3+fileSizeLen); i++){
 		fileSizeStr[i-3]=buf[i];
 	}
+	
 	fileSize=atoi(fileSizeStr);
-
-	int fileNameLen = buf[i+1];
 	i+=2;
+
 	for(int j = 0;i<bufLen;i++,j++) {
 		filePath[j] = buf[i];
 	}
 
-	cout << "Tamanho do Ficheiro: " << fileSize << endl;
-	cout << "Nome do Ficheiro: " << filePath << endl;
+	return fileSize;
 	
 }
 

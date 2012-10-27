@@ -28,6 +28,9 @@ using namespace std;
 #define RR1 0x25
 #define REJ0 0x01
 #define REJ1 0x21
+#define MODEMDEVICE "/dev/ttyS0"
+#define _POSIX_SOURCE 1 /* POSIX compliant source */
+
 // Data Link
 class dataLink {  
 		char port[MAX_SIZE];
