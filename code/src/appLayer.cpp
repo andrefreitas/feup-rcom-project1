@@ -20,7 +20,8 @@ int appLayer::sendFile() {
 	fseek(pFile, 0, SEEK_END);
 	int fileSize = ftell(pFile);
 	rewind(pFile);
-	dataLink *d = new dataLink((char*) MODEMDEVICE, baudrate, timeout, maxAttempts);
+	dataLink *d = new dataLink((char*) MODEMDEVICE, baudrate, timeout,
+			maxAttempts);
 	printf("=== OPEN ===\n");
 	d->llopen(TRANSMITTER);
 	printf("\n=== DATA ===\n");
@@ -29,7 +30,7 @@ int appLayer::sendFile() {
 	while (1) {
 		bzero(buf, HALF_SIZE);
 		bzero(package, HALF_SIZE);
-		bufLen = fread(buf, 1, readSize-4, pFile);
+		bufLen = fread(buf, 1, readSize - 4, pFile);
 		if (bufLen == 0)
 			break;
 		packageLen = buildDataPackage(package, buf, index, bufLen);
@@ -47,8 +48,8 @@ int appLayer::sendFile() {
 	return 0;
 }
 
-int appLayer::buildControlPackage(const char* filePath, unsigned char* package, int fileSize,
-		unsigned char control) {
+int appLayer::buildControlPackage(const char* filePath, unsigned char* package,
+		int fileSize, unsigned char control) {
 	char fileSizestr[MAX_SIZE];
 	int fileSizeLen, packageLen;
 	package[0] = control;
@@ -62,18 +63,18 @@ int appLayer::buildControlPackage(const char* filePath, unsigned char* package, 
 	}
 
 	// Name of the file (remove the path if needed)
-	
+
 	int filePathLen = strlen(filePath);
-	int fileNamePos=-1;
-	for( int i=filePathLen-1; i>-1;i--){
-		if(filePath[i]=='/'){
-			fileNamePos=i+1;
+	int fileNamePos = -1;
+	for (int i = filePathLen - 1; i > -1; i--) {
+		if (filePath[i] == '/') {
+			fileNamePos = i + 1;
 			break;
 		}
 	}
-	if(fileNamePos!=-1){
-		filePath+=fileNamePos;
-		filePathLen=strlen(filePath);
+	if (fileNamePos != -1) {
+		filePath += fileNamePos;
+		filePathLen = strlen(filePath);
 	}
 	//cout << "Name of the file: " << filePath << endl;
 
@@ -89,7 +90,8 @@ int appLayer::buildControlPackage(const char* filePath, unsigned char* package, 
 	return packageLen;
 }
 
-int appLayer::buildDataPackage(unsigned char* package, unsigned char* data, int index, int dataLen) {
+int appLayer::buildDataPackage(unsigned char* package, unsigned char* data,
+		int index, int dataLen) {
 	unsigned char sequenceNumber = index % 255;
 
 	if (dataLen > 65535) // Limit exceeded
@@ -115,25 +117,24 @@ int appLayer::buildDataPackage(unsigned char* package, unsigned char* data, int 
 }
 
 int appLayer::receiveFile() {
-	dataLink * d = new dataLink((char*) MODEMDEVICE, baudrate, timeout, maxAttempts);
+	dataLink * d = new dataLink((char*) MODEMDEVICE, baudrate, timeout,
+			maxAttempts);
 	int bufLen;
 	FILE* pFile;
 	unsigned char* buf = new unsigned char[HALF_SIZE];
 	unsigned char* data;
-	
-	
+	int fileSizeReceived = 0;
 
 	printf("=== OPEN ===\n");
 	d->llopen(RECEIVER);
 	printf("\n=== DATA ===\n");
 
-	bufLen=d->llread(buf);
-
-	
+	bufLen = d->llread(buf);
+	fileSize = parseFileName(buf, 0, bufLen);
 
 	// Check if user specified the file name
-	if(strcmp(filePath,"NONE")==0)
-		fileSize = parseFileName(buf,filePath,bufLen);
+	if (strcmp(filePath, "NONE") == 0)
+		parseFileName(buf, filePath, bufLen);
 	pFile = fopen(filePath, "wb");
 
 	bzero(buf, HALF_SIZE);
@@ -141,83 +142,88 @@ int appLayer::receiveFile() {
 		bufLen -= 4;
 		data = buf + 4;
 		fwrite(data, 1, bufLen, pFile);
+		fileSizeReceived += bufLen;
 		bzero(buf, HALF_SIZE);
 	}
 	fclose(pFile);
-	//d.llread(buf);
+
 	cout << endl;
 	printf("\n=== CLOSE ===\n");
 	d->llclose(RECEIVER);
-	//cout << "\nRecebi: " << buf << endl;
+
+	// check if the file received is complete
+	if (fileSizeReceived != fileSize)
+		cout << "\n ERROR: The file is not complete!\n";
+	else cout << "\nFile received with success\n";
 	d->getStats(stats);
 	return 0;
 }
 
-void appLayer::buildArgs(int argc, char* argv[]){
-	args["b"]="NONE";
-	args["t"]="NONE";
-	args["s"]="NONE";
-	args["r"]="NONE";
-	args["l"]="NONE";
+void appLayer::buildArgs(int argc, char* argv[]) {
+	args["b"] = "NONE";
+	args["t"] = "NONE";
+	args["s"] = "NONE";
+	args["r"] = "NONE";
+	args["l"] = "NONE";
 
-	for (int i=1; i<argc; i++){
-		if(argv[i][0]=='-'){
-			char *key=&argv[i][1];
-			args[key]=argv[i+1];
+	for (int i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			char *key = &argv[i][1];
+			args[key] = argv[i + 1];
 			i++;
 		}
 	}
-	
-//	map<string,string>::iterator it;
+
+	//	map<string,string>::iterator it;
 
 	// show content:
-  	//for ( it=args.begin() ; it != args.end(); it++ )
-    	//cout << (*it).first << " => " << (*it).second << endl;
-	
-	if(args["t"]!="NONE")
+	//for ( it=args.begin() ; it != args.end(); it++ )
+	//cout << (*it).first << " => " << (*it).second << endl;
+
+	if (args["t"] != "NONE")
 		timeout = atoi(args["t"].c_str());
-	if(args["b"]!="NONE")
+	if (args["b"] != "NONE")
 		baudrate = atoi(args["b"].c_str());
-	if(args["r"]!="NONE")
+	if (args["r"] != "NONE")
 		maxAttempts = atoi(args["r"].c_str());
-	if(args["s"]!="NONE"){
+	if (args["s"] != "NONE") {
 		readSize = atoi(args["s"].c_str());
-		if(readSize>4000 || readSize<5) {
-		readSize=4000;
-		cout << "Readsize corrigido para default:4000\n";
+		if (readSize > 4000 || readSize < 5) {
+			readSize = 4000;
+			cout << "Readsize corrigido para default:4000\n";
 		}
 	}
-	
-	strcpy(filePath,args["l"].c_str());
 
-	
+	strcpy(filePath, args["l"].c_str());
+
 }
 
-int appLayer::parseFileName(unsigned char *buf,char *filePath, int bufLen){
-	int fileSizeLen=buf[2];
+int appLayer::parseFileName(unsigned char *buf, char *filePath, int bufLen) {
+	int fileSizeLen = buf[2];
 	int i;
 	int fileSize;
-	char *fileSizeStr=new char[readSize];
-	for(i=3; i<(3+fileSizeLen); i++){
-		fileSizeStr[i-3]=buf[i];
+	char *fileSizeStr = new char[readSize];
+	for (i = 3; i < (3 + fileSizeLen); i++) {
+		fileSizeStr[i - 3] = buf[i];
 	}
-	
-	fileSize=atoi(fileSizeStr);
-	i+=2;
 
-	for(int j = 0;i<bufLen;i++,j++) {
-		filePath[j] = buf[i];
+	fileSize = atoi(fileSizeStr);
+	i += 2;
+	if (filePath != 0) {
+		for (int j = 0; i < bufLen; i++, j++) {
+			filePath[j] = buf[i];
+		}
 	}
 
 	return fileSize;
-	
+
 }
-void appLayer::showStats(){ 
+void appLayer::showStats() {
 	cout << "\n=======================STATS===============================\n";
 	cout << "- Total Rejects: " << stats["rejects"] << endl;
-	cout << "- Total Timeouts: " <<stats["timeouts"] << endl;
-	cout << "- Total Frames Sent: " <<stats["totalSent"] << endl;
-	cout << "- Total Frames Received: " <<stats["totalReceived"] << endl;
+	cout << "- Total Timeouts: " << stats["timeouts"] << endl;
+	cout << "- Total Frames Sent: " << stats["totalSent"] << endl;
+	cout << "- Total Frames Received: " << stats["totalReceived"] << endl;
 	cout << "===========================================================\n";
 }
 
