@@ -1,7 +1,6 @@
 #include <iostream>
 #include "datalink.h"
 #include "appLayer.h"
-#define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
@@ -16,20 +15,23 @@ int main() {
 */
 int main(int argc, char* argv[]) {
 
-	if (argc == 2) {
+	if (argc >= 3) {
 		if (strcmp(argv[1], "transmitter") == 0) {
-			appLayer * app = new appLayer((char*)"/usr/users2/mieic2010/ei10086/Desktop/pinguim.gif");
+			appLayer * app = new appLayer();
+			app->buildArgs(argc,argv);
 			app->sendFile();
+			
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
-			appLayer * app = new appLayer((char*)"/usr/users2/mieic2010/ei10086/Desktop/pinguim.gif");
+			appLayer * app = new appLayer();
+			app->buildArgs(argc,argv);
 			app->receiveFile();
 		}
 		else
-			cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
+			cout << "Uso: \"nserial receiver location to save file\" or \"nserial transmitter location of the file\" " << endl;
 	}
 	else
-		cout << "Uso: \"nserial receiver\" or \"nserial transmitter \" " << endl;
+		cout << "Uso: \"nserial receiver location to save file\" or \"nserial transmitter location of the file\" " << endl;
 	return 0;
 }
 

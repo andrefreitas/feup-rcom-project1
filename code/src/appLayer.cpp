@@ -1,12 +1,15 @@
 #include "appLayer.h"
-#define READSIZE 120
+#define READSIZE 4000
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyS0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
-appLayer::appLayer(char* filePath) {
+appLayer::appLayer() {
 	this->filePath = new char[MAX_SIZE];
-	this->filePath = filePath;
+	timeout = 1;
+	baudrate = B38400;
+	readSize = 4000;
+	maxAttempts = 3;
 }
 
 int appLayer::sendFile() {
@@ -21,7 +24,7 @@ int appLayer::sendFile() {
 	fseek(pFile, 0, SEEK_END);
 	int fileSize = ftell(pFile);
 	rewind(pFile);
-	dataLink *d = new dataLink((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+	dataLink *d = new dataLink((char*) MODEMDEVICE, baudrate, timeout, maxAttempts);
 	printf("=== OPEN ===\n");
 	d->llopen(TRANSMITTER);
 	printf("\n=== DATA ===\n");
@@ -30,7 +33,7 @@ int appLayer::sendFile() {
 	while (1) {
 		bzero(buf, HALF_SIZE);
 		bzero(package, HALF_SIZE);
-		bufLen = fread(buf, 1, READSIZE, pFile);
+		bufLen = fread(buf, 1, readSize-4, pFile);
 		if (bufLen == 0)
 			break;
 		packageLen = buildDataPackage(package, buf, index, bufLen);
@@ -47,7 +50,7 @@ int appLayer::sendFile() {
 	return 0;
 }
 
-int appLayer::buildControlPackage(char* filePath, unsigned char* package, int fileSize,
+int appLayer::buildControlPackage(const char* filePath, unsigned char* package, int fileSize,
 		unsigned char control) {
 	char fileSizestr[MAX_SIZE];
 	int fileSizeLen, packageLen;
@@ -101,21 +104,26 @@ int appLayer::buildDataPackage(unsigned char* package, unsigned char* data, int 
 }
 
 int appLayer::receiveFile() {
-	dataLink * d = new dataLink((char*) MODEMDEVICE, BAUDRATE, 3, 3);
+	dataLink * d = new dataLink((char*) MODEMDEVICE, baudrate, timeout, maxAttempts);
 	int bufLen;
 	FILE* pFile;
 	unsigned char* package = new unsigned char[HALF_SIZE];
 	unsigned char* buf = new unsigned char[HALF_SIZE];
 	unsigned char* data;
-
-	pFile = fopen(filePath, "wb");
+	
+	
 
 	printf("=== OPEN ===\n");
 	d->llopen(RECEIVER);
 	printf("\n=== DATA ===\n");
-	d->llread(buf);
-	bzero(buf, HALF_SIZE);
 
+	d->llread(buf);
+
+	// Check if user specified the file name
+	if(strcmp(filePath,"NONE")!=0)
+		pFile = fopen(filePath, "wb");
+
+	bzero(buf, HALF_SIZE);
 	while (bufLen =d->llread(buf)) {
 		bufLen -= 4;
 		data = buf + 4;
@@ -129,4 +137,44 @@ int appLayer::receiveFile() {
 	d->llclose(RECEIVER);
 	//cout << "\nRecebi: " << buf << endl;
 	return 0;
+}
+
+void appLayer::buildArgs(int argc, char* argv[]){
+	args["b"]="NONE";
+	args["t"]="NONE";
+	args["s"]="NONE";
+	args["r"]="NONE";
+	args["l"]="NONE";
+
+	for (int i=1; i<argc; i++){
+		if(argv[i][0]=='-'){
+			char *key=&argv[i][1];
+			args[key]=argv[i+1];
+			i++;
+		}
+	}
+	
+//	map<string,string>::iterator it;
+
+	// show content:
+  	//for ( it=args.begin() ; it != args.end(); it++ )
+    	//cout << (*it).first << " => " << (*it).second << endl;
+	
+	if(args["t"]!="NONE")
+		timeout = atoi(args["t"].c_str());
+	if(args["b"]!="NONE")
+		baudrate = atoi(args["b"].c_str());
+	if(args["r"]!="NONE")
+		maxAttempts = atoi(args["r"].c_str());
+	if(args["s"]!="NONE"){
+		readSize = atoi(args["s"].c_str());
+		if(readSize>4000 || readSize<5) {
+		readSize=4000;
+		cout << "Readsize corrigido para default:4000\n";
+		}
+	}
+	
+	filePath = args["l"].c_str();
+
+	
 }

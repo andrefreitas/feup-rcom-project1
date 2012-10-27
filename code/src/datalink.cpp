@@ -304,8 +304,9 @@ int dataLink::llwrite(unsigned char *buf, int unsigned length) {
 		dataLink::currentFD = fd;
 		dataLink::currentFrame = stuffedFrame;
 		dataLink::reaminingAttempts = maxAttempts;
-
+		cout << "Antes de escrever " << endl;
 		write(fd, stuffedFrame, dataLink::currentFrameLength);
+		cout << "Depois de Escrever " << endl;
 		if (retries > 0)
 			cout << "*";
 		printf("%d -> ", sequenceNumber);
