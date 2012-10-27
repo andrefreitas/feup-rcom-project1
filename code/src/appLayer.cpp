@@ -64,8 +64,22 @@ int appLayer::buildControlPackage(const char* filePath, unsigned char* package, 
 		package[i] = fileSizestr[i - 3];
 	}
 
-	// Name of the file
+	// Name of the file (remove the path if needed)
+	
 	int filePathLen = strlen(filePath);
+	int fileNamePos=-1;
+	for( int i=filePathLen-1; i>-1;i--){
+		if(filePath[i]=='/'){
+			fileNamePos=i+1;
+			break;
+		}
+	}
+	if(fileNamePos!=-1){
+		filePath+=fileNamePos;
+		filePathLen=strlen(filePath);
+	}
+	//cout << "Name of the file: " << filePath << endl;
+
 	package[3 + fileSizeLen] = 0x01;
 	package[4 + fileSizeLen] = filePathLen;
 	for (int i = (5 + fileSizeLen); i < (filePathLen + 5 + fileSizeLen); i++) {
@@ -117,11 +131,14 @@ int appLayer::receiveFile() {
 	d->llopen(RECEIVER);
 	printf("\n=== DATA ===\n");
 
-	d->llread(buf);
+	bufLen=d->llread(buf);
+
+	
 
 	// Check if user specified the file name
-	if(strcmp(filePath,"NONE")!=0)
-		pFile = fopen(filePath, "wb");
+	if(strcmp(filePath,"NONE")==0)
+		fileSize = parseFileName(buf,filePath,bufLen);
+	pFile = fopen(filePath, "wb");
 
 	bzero(buf, HALF_SIZE);
 	while (bufLen =d->llread(buf)) {
@@ -174,7 +191,29 @@ void appLayer::buildArgs(int argc, char* argv[]){
 		}
 	}
 	
-	filePath = args["l"].c_str();
+	strcpy(filePath,args["l"].c_str());
 
 	
 }
+
+int appLayer::parseFileName(unsigned char *buf,char *filePath, int bufLen){
+	int fileSizeLen=buf[2];
+	int i;
+	int fileSize;
+	char *fileSizeStr=new char[readSize];
+	for(i=3; i<(3+fileSizeLen); i++){
+		fileSizeStr[i-3]=buf[i];
+	}
+	fileSize=atoi(fileSizeStr);
+
+	int fileNameLen = buf[i+1];
+	i+=2;
+	for(int j = 0;i<bufLen;i++,j++) {
+		filePath[j] = buf[i];
+	}
+
+	cout << "Tamanho do Ficheiro: " << fileSize << endl;
+	cout << "Nome do Ficheiro: " << filePath << endl;
+	
+}
+

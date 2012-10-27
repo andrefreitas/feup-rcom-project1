@@ -15,7 +15,7 @@ int main() {
 */
 int main(int argc, char* argv[]) {
 
-	if (argc >= 3) {
+	if (argc >= 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			appLayer * app = new appLayer();
 			app->buildArgs(argc,argv);
