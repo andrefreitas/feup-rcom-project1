@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <iostream>
-
+#include <map>
 using namespace std;
 
 #define HALF_SIZE 4096
@@ -52,6 +52,10 @@ class dataLink {
 		static int stuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame);
 		static int deStuffFrame(unsigned char* frame, int frameLen, unsigned char* newFrame);
 		// -->
+		int totalRejs;
+		int totalReceived;
+		static int totalTimeouts;
+		static int totalSent;
 		
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
@@ -65,6 +69,7 @@ class dataLink {
 		int llclose(unsigned int who);
 		int llwrite(unsigned char *buf,int unsigned length);
 		int llread(unsigned char *buf);
+		void getStats(map<string,int> &stats);
 		~dataLink();
 }; 
 

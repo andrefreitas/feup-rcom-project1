@@ -4,7 +4,8 @@ int dataLink::reaminingAttempts = 0;
 int dataLink::currentFrameLength = 0;
 int dataLink::currentFD = 0;
 int dataLink::currentTimeout = 0;
-
+int dataLink::totalTimeouts=0;
+int dataLink::totalSent=0;
 void dataLink::handleTimeout(int signo) {
 	if (dataLink::reaminingAttempts > 0) {
 		printf("\n\nAlarme. Tentativas restantes: %d\n\n",
@@ -13,6 +14,8 @@ void dataLink::handleTimeout(int signo) {
 				dataLink::currentFrameLength);
 		alarm(dataLink::currentTimeout);
 		dataLink::reaminingAttempts--;
+		dataLink::totalTimeouts++;
+		dataLink::totalSent++;
 	} else {
 		printf("\nTimeout !\n");
 		exit(0);
@@ -27,6 +30,12 @@ dataLink::dataLink(char *port, int baudRate, unsigned int timeout,
 	this->maxAttempts = maxAttempts;
 	sequenceNumber = 0;
 	setupSerialPort();
+	
+	// stats		
+	dataLink::totalTimeouts=0;
+	totalRejs=0;
+	dataLink::totalSent=0;
+	totalReceived=0;
 }
 
 dataLink::~dataLink() {
@@ -192,6 +201,9 @@ int dataLink::llopen(unsigned int who) {
 	ua[3] = ADDRESS_ER ^ UA;
 	ua[4] = FLAG;
 
+	dataLink::totalSent++;
+	totalReceived++;
+
 	if (who == TRANSMITTER) {
 
 		dataLink::currentFrame = set;
@@ -199,14 +211,13 @@ int dataLink::llopen(unsigned int who) {
 		dataLink::currentTimeout = timeout;
 		dataLink::currentFD = fd;
 		dataLink::currentFrameLength = 5;
-
+	
 		write(fd, set, 5);
 		printf("-> Enviou SET\n");
 		alarm(timeout);
 		readSupervisionFrame(fd, ua);
 		alarm(0);
 		printf("<- Recebeu UA\n");
-
 		return fd;
 
 	} else if (who == RECEIVER) {
@@ -218,6 +229,7 @@ int dataLink::llopen(unsigned int who) {
 		printf("-> Enviou UA\n");
 		return fd;
 	}
+
 	return -1;
 }
 int dataLink::llclose(unsigned int who) {
@@ -246,10 +258,13 @@ int dataLink::llclose(unsigned int who) {
 	dataLink::currentTimeout = timeout;
 	dataLink::currentFD = fd;
 	dataLink::currentFrameLength = 5;
+	
+	totalReceived++;
 
 	if (who == TRANSMITTER) {
 
 		write(fd, discT, 5);
+		dataLink::totalSent++;
 		printf("-> Escreveu discT\n");
 		dataLink::currentFrame = discT;
 		dataLink::reaminingAttempts = maxAttempts;
@@ -258,6 +273,7 @@ int dataLink::llclose(unsigned int who) {
 		alarm(0);
 		printf("<- Recebeu discR\n");
 		write(fd, ua, 5);
+		dataLink::totalSent++;
 		printf("-> Enviou UA\n");
 		return fd;
 	}
@@ -305,11 +321,16 @@ int dataLink::llwrite(unsigned char *buf, int unsigned length) {
 		dataLink::currentFrame = stuffedFrame;
 		dataLink::reaminingAttempts = maxAttempts;
 		write(fd, stuffedFrame, dataLink::currentFrameLength);
-		if (retries > 0)
+		if (retries > 0){
 			cout << "*";
+			totalRejs++;
+		}
 		printf("%d -> ", sequenceNumber);
 		alarm(timeout);
 		retries++;
+
+		dataLink::totalSent++;
+		totalReceived++;
 
 	} while (!isReceiverReady(fd, rr, rej));
 
@@ -490,6 +511,9 @@ int dataLink::llread(unsigned char *buf) {
 		int unsigned sReceived = parseSequenceNumber(frame);
 		unsigned char rej[5], rr[5];
 		buildREJRR(sequenceNumber, rej, rr);
+		
+		dataLink::totalSent++;
+		totalReceived++;
 
 		// If the sequenceNumber is repeated ( need to check later)
 		if (sReceived != sequenceNumber) {
@@ -498,11 +522,13 @@ int dataLink::llread(unsigned char *buf) {
 			write(fd, rrWrongSequence, 5);
 		}
 
+
 		// Check errors
 		else {
 			if (rejectFrame(frame, frameLen)) {
 				write(fd, rej, 5);
 				cout << "\n  -> Enviou REJ" << sequenceNumber << endl;
+				totalRejs++;
 			} else {
 				write(fd, rr, 5);
 				sequenceNumber = !sequenceNumber;
@@ -565,4 +591,11 @@ int dataLink::deStuffFrame(unsigned char* frame, int frameLen, unsigned char* ne
 	}
 
 	return j;
+}
+
+void dataLink::getStats(map<string,int> &stats){
+	stats["rejects"]=totalRejs;		
+	stats["timeouts"]=dataLink::totalTimeouts;
+	stats["totalSent"]=dataLink::totalSent;
+	stats["totalReceived"]=totalReceived;
 }

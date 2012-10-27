@@ -20,12 +20,14 @@ int main(int argc, char* argv[]) {
 			appLayer * app = new appLayer();
 			app->buildArgs(argc,argv);
 			app->sendFile();
+			app->showStats();
 			
 		}
 		else if (strcmp(argv[1], "receiver") == 0) {
 			appLayer * app = new appLayer();
 			app->buildArgs(argc,argv);
 			app->receiveFile();
+			app->showStats();
 		}
 		else
 			cout << "Uso: \"nserial receiver location to save file\" or \"nserial transmitter location of the file\" " << endl;

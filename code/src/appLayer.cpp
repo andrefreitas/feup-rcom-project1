@@ -43,6 +43,7 @@ int appLayer::sendFile() {
 
 	printf("\n=== CLOSE ===\n");
 	d->llclose(TRANSMITTER);
+	d->getStats(stats);
 	return 0;
 }
 
@@ -148,6 +149,7 @@ int appLayer::receiveFile() {
 	printf("\n=== CLOSE ===\n");
 	d->llclose(RECEIVER);
 	//cout << "\nRecebi: " << buf << endl;
+	d->getStats(stats);
 	return 0;
 }
 
@@ -209,5 +211,13 @@ int appLayer::parseFileName(unsigned char *buf,char *filePath, int bufLen){
 
 	return fileSize;
 	
+}
+void appLayer::showStats(){ 
+	cout << "\n=======================STATS===============================\n";
+	cout << "- Total Rejects: " << stats["rejects"] << endl;
+	cout << "- Total Timeouts: " <<stats["timeouts"] << endl;
+	cout << "- Total Frames Sent: " <<stats["totalSent"] << endl;
+	cout << "- Total Frames Received: " <<stats["totalReceived"] << endl;
+	cout << "===========================================================\n";
 }
 

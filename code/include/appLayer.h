@@ -1,6 +1,4 @@
 #include "datalink.h"
-#include <map>
-#include <string>
 class appLayer {
 	char* filePath;
 	int buildControlPackage(const char* filePath, unsigned char* package, int fileSize,unsigned char control);
@@ -12,11 +10,13 @@ class appLayer {
 	int maxAttempts;
 	int fileSize;
 	int parseFileName(unsigned char *buf, char *filepath, int bufLen);
+	map<string,int> stats;
 
 public:
 	appLayer();
 	void buildArgs(int argc, char* argv[]);
 	int sendFile();
 	int receiveFile();
+	void showStats();
 
 };
