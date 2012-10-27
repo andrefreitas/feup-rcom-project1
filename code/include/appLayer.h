@@ -10,6 +10,7 @@ class appLayer {
 	int maxAttempts;
 	int fileSize;
 	int errorProb;
+	bool restoreTransfer;
 	int parseFileName(unsigned char *buf, char *filepath, int bufLen);
 	map<string,int> stats;
 

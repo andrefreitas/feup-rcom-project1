@@ -23,8 +23,21 @@ int appLayer::sendFile() {
 	rewind(pFile);
 	dataLink *d = new dataLink((char*) MODEMDEVICE, baudrate, timeout,
 			maxAttempts);
-	printf("=== OPEN ===\n");
-	d->llopen(TRANSMITTER);
+
+	if(!restoreTransfer){
+		printf("=== OPEN ===\n");
+		d->llopen(TRANSMITTER);
+	}
+
+	if((fileSize/readSize)>255) {
+		cout << "\n ATTENTION: restore may fail because -s is too low\n";
+		cout << "Do you want to continue?(y/n): ";
+		char op;
+		cin>> op;
+		if(op=='n' || op=='N') exit(0);
+	}
+
+
 	printf("\n=== DATA ===\n");
 	packageLen = buildControlPackage(filePath, package, fileSize, 0x01);
 	d->llwrite(package, packageLen);
@@ -138,13 +151,20 @@ int appLayer::receiveFile() {
 	if (strcmp(filePath, "NONE") == 0)
 		parseFileName(buf, filePath, bufLen);
 	pFile = fopen(filePath, "wb");
-
 	bzero(buf, HALF_SIZE);
+
+	int sequenceNumber=-1;
+
 	while ((bufLen = d->llread(buf))) {
 		bufLen -= 4;
 		data = buf + 4;
-		fwrite(data, 1, bufLen, pFile);
-		fileSizeReceived += bufLen;
+
+		// Check sequence number ( to restore file transfer)
+		if((sequenceNumber+1) == buf[1]){
+			sequenceNumber++;
+			fwrite(data, 1, bufLen, pFile);
+			fileSizeReceived += bufLen;
+		}
 		bzero(buf, HALF_SIZE);
 	}
 	fclose(pFile);
@@ -169,6 +189,7 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 	args["r"] = "NONE";
 	args["l"] = "NONE";
 	args["error"] = "NONE";
+	args["restore"]="0";
 	for (int i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			char *key = &argv[i][1];
@@ -201,6 +222,9 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 	}
 
 	strcpy(filePath, args["l"].c_str());
+
+	restoreTransfer=atoi(args["restore"].c_str());
+
 
 }
 
