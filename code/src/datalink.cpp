@@ -481,6 +481,12 @@ bool dataLink::rejectFrame(unsigned char *frame, int frameLen) {
 	if (dataLen == 0)
 		return true;
 
+	// Generate Random Errors
+	if(haveErrors(errorProb)){
+		int pos=rand() % frameLen;
+		frame[pos]=frame[pos] | (0x01 << (pos % 7));
+	}
+
 	// Check BCC1
 	if ((frame[1] ^ frame[2]) != frame[3]) {
 		cout << " Erro no BCC1";
@@ -602,4 +608,16 @@ void dataLink::getStats(map<string,int> &stats){
 	stats["timeouts"]=dataLink::totalTimeouts;
 	stats["totalSent"]=dataLink::totalSent;
 	stats["totalReceived"]=totalReceived;
+}
+
+bool dataLink::haveErrors(int probability){
+	int num=rand() % 101;
+	if (num<=probability)
+		return true;
+	return false;
+
+}
+
+void dataLink::setErrorProb(int prob){
+	errorProb=prob;
 }

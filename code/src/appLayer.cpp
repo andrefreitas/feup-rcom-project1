@@ -6,6 +6,7 @@ appLayer::appLayer() {
 	baudrate = B38400;
 	readSize = 4000;
 	maxAttempts = 3;
+	errorProb = 5;
 }
 
 int appLayer::sendFile() {
@@ -119,6 +120,7 @@ int appLayer::buildDataPackage(unsigned char* package, unsigned char* data,
 int appLayer::receiveFile() {
 	dataLink * d = new dataLink((char*) MODEMDEVICE, baudrate, timeout,
 			maxAttempts);
+	d->setErrorProb(errorProb);
 	int bufLen;
 	FILE* pFile;
 	unsigned char* buf = new unsigned char[HALF_SIZE];
@@ -154,7 +156,8 @@ int appLayer::receiveFile() {
 	// check if the file received is complete
 	if (fileSizeReceived != fileSize)
 		cout << "\n ERROR: The file is not complete!\n";
-	else cout << "\nFile received with success\n";
+	else
+		cout << "\nFile received with success\n";
 	d->getStats(stats);
 	return 0;
 }
@@ -165,7 +168,7 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 	args["s"] = "NONE";
 	args["r"] = "NONE";
 	args["l"] = "NONE";
-
+	args["error"] = "NONE";
 	for (int i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			char *key = &argv[i][1];
@@ -192,6 +195,9 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 			readSize = 4000;
 			cout << "Readsize corrigido para default:4000\n";
 		}
+	}
+	if (args["error"] != "NONE") {
+		errorProb = atoi(args["error"].c_str());
 	}
 
 	strcpy(filePath, args["l"].c_str());

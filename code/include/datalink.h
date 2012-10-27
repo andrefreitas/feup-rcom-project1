@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <map>
+#include <time.h>
 using namespace std;
 
 #define HALF_SIZE 4096
@@ -30,7 +31,7 @@ using namespace std;
 #define REJ1 0x21
 #define MODEMDEVICE "/dev/ttyS0"
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
-
+#define ERROR_PROB 5
 // Data Link
 class dataLink {  
 		char port[MAX_SIZE];
@@ -56,7 +57,9 @@ class dataLink {
 		int totalReceived;
 		static int totalTimeouts;
 		static int totalSent;
-		
+		// -->
+		bool haveErrors(int probability);
+		int errorProb;
 	public:
 		dataLink(char *port,int baudRate, unsigned int timeout, unsigned int maxAttempts);
 		static void handleTimeout(int signo);
@@ -69,6 +72,7 @@ class dataLink {
 		int llclose(unsigned int who);
 		int llwrite(unsigned char *buf,int unsigned length);
 		int llread(unsigned char *buf);
+		void setErrorProb(int prob);
 		void getStats(map<string,int> &stats);
 		~dataLink();
 }; 

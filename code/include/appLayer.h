@@ -9,6 +9,7 @@ class appLayer {
 	int readSize;
 	int maxAttempts;
 	int fileSize;
+	int errorProb;
 	int parseFileName(unsigned char *buf, char *filepath, int bufLen);
 	map<string,int> stats;
 

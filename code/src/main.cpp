@@ -14,7 +14,7 @@ int main() {
 
 */
 int main(int argc, char* argv[]) {
-
+	srand ( time(NULL) );
 	if (argc >= 2) {
 		if (strcmp(argv[1], "transmitter") == 0) {
 			appLayer * app = new appLayer();
