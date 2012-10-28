@@ -39,6 +39,7 @@ void printUsage(){
 	cout << "-restore\t Restore the connection in case of transmitter crash (0 or 1)" << endl;
 	cout << "-t\t\t Time in seconds for the timeouts" << endl;
 	cout << "-error\t\t Probability for creating errors (0-100)" << endl;
+	cout << "-b\t\t The baudrate" << endl;
 	cout << "-r\t\t Max attempts for reconnect to the receiver" << endl << endl;
 
 	cout << "Example: ./nserial transmitter -l ~/Desktop/pinguim.gif -s 2000 -error 5 -r 4" << endl;
