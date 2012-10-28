@@ -24,19 +24,19 @@ int appLayer::sendFile() {
 	dataLink *d = new dataLink((char*) MODEMDEVICE, baudrate, timeout,
 			maxAttempts);
 
-	if(!restoreTransfer){
+	if (!restoreTransfer) {
 		printf("=== OPEN ===\n");
 		d->llopen(TRANSMITTER);
 	}
 
-	if((fileSize/readSize)>255) {
+	if ((fileSize / readSize) > 255) {
 		cout << "\n ATTENTION: restore may fail because -s is too low\n";
 		cout << "Do you want to continue?(y/n): ";
 		char op;
-		cin>> op;
-		if(op=='n' || op=='N') exit(0);
+		cin >> op;
+		if (op == 'n' || op == 'N')
+			exit(0);
 	}
-
 
 	printf("\n=== DATA ===\n");
 	packageLen = buildControlPackage(filePath, package, fileSize, 0x01);
@@ -139,6 +139,8 @@ int appLayer::receiveFile() {
 	unsigned char* buf = new unsigned char[HALF_SIZE];
 	unsigned char* data;
 	fileSizeReceived = 0;
+	string fileName;
+	char *temp = new char[MAX_SIZE];
 
 	printf("=== OPEN ===\n");
 	d->llopen(RECEIVER);
@@ -148,19 +150,29 @@ int appLayer::receiveFile() {
 	fileSize = parseFileName(buf, 0, bufLen);
 
 	// Check if user specified the file name
-	if (strcmp(filePath, "NONE") == 0)
+	if (strcmp(filePath, "NONE") == 0) {
 		parseFileName(buf, filePath, bufLen);
-	pFile = fopen(filePath, "wb");
+		pFile = fopen(filePath, "wb");
+	} else {
+		fileName = filePath;
+
+		if (fileName.at(fileName.length() - 1) == '/') {
+			parseFileName(buf, temp, bufLen);
+			strcat(filePath, temp);
+			//cout << "FileP: " << filePath << endl;
+		}
+		pFile = fopen(filePath, "wb");
+	}
 	bzero(buf, HALF_SIZE);
 
-	int sequenceNumber=-1;
+	int sequenceNumber = -1;
 
 	while ((bufLen = d->llread(buf))) {
 		bufLen -= 4;
 		data = buf + 4;
 
 		// Check sequence number ( to restore file transfer)
-		if((sequenceNumber+1) == buf[1]){
+		if ((sequenceNumber + 1) == buf[1]) {
 			sequenceNumber++;
 			fwrite(data, 1, bufLen, pFile);
 			fileSizeReceived += bufLen;
@@ -189,7 +201,7 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 	args["r"] = "NONE";
 	args["l"] = "NONE";
 	args["error"] = "NONE";
-	args["restore"]="0";
+	args["restore"] = "0";
 	for (int i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			char *key = &argv[i][1];
@@ -223,8 +235,7 @@ void appLayer::buildArgs(int argc, char* argv[]) {
 
 	strcpy(filePath, args["l"].c_str());
 
-	restoreTransfer=atoi(args["restore"].c_str());
-
+	restoreTransfer = atoi(args["restore"].c_str());
 
 }
 
@@ -257,6 +268,6 @@ void appLayer::showStats() {
 	cout << "===========================================================\n";
 }
 
-int appLayer::getTotalReceived(){
+int appLayer::getTotalReceived() {
 	return fileSizeReceived;
 }
