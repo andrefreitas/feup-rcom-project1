@@ -13,6 +13,7 @@ class appLayer {
 	bool restoreTransfer;
 	int parseFileName(unsigned char *buf, char *filepath, int bufLen);
 	map<string,int> stats;
+	int fileSizeReceived;
 
 public:
 	appLayer();
@@ -20,5 +21,6 @@ public:
 	int sendFile();
 	int receiveFile();
 	void showStats();
+	int getTotalReceived();
 
 };

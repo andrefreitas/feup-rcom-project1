@@ -138,7 +138,7 @@ int appLayer::receiveFile() {
 	FILE* pFile;
 	unsigned char* buf = new unsigned char[HALF_SIZE];
 	unsigned char* data;
-	int fileSizeReceived = 0;
+	fileSizeReceived = 0;
 
 	printf("=== OPEN ===\n");
 	d->llopen(RECEIVER);
@@ -257,3 +257,6 @@ void appLayer::showStats() {
 	cout << "===========================================================\n";
 }
 
+int appLayer::getTotalReceived(){
+	return fileSizeReceived;
+}
