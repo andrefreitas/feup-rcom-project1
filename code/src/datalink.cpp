@@ -50,7 +50,7 @@ void dataLink::setupSerialPort() {
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0; /* set input mode (non-canonical, no echo,...) */
 	newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
-	newtio.c_cc[VMIN] = 5; /* blocking read until 5 chars received */
+	newtio.c_cc[VMIN] = 1; /* blocking read until 5 chars received */
 
 	tcflush(fd, TCIOFLUSH);
 	tcsetattr(fd, TCSANOW, &newtio);
@@ -118,9 +118,10 @@ void dataLink::readSupervisionFrame(int fd, unsigned char*buf) {
 bool dataLink::isReceiverReady(int fd, unsigned char* rr, unsigned char* rej) {
 	int estado = 0;
 	unsigned char readC;
+	int nb;
 	while (1) {
-		read(fd, &readC, 1);
-		printf("%x:st%d ", readC, estado);
+		nb=read(fd, &readC, 1);
+		printf("%x:st%d nb=%d ", readC, estado, nb);
 		switch (estado) {
 		case 0: {
 			if (readC == rr[0]) // FLAG
